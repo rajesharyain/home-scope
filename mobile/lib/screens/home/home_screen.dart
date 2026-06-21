@@ -40,7 +40,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (mounted) {
       final state = ref.read(analysisProvider);
       if (state.status == AnalysisStatus.done) {
-        context.pushNamed('dashboard', extra: state.address);
+        context.pushNamed('neighborhood');
       }
     }
   }

@@ -81,23 +81,47 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
             icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
             onPressed: () => context.pop(),
           ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+          title: Row(
             children: [
-              const Text(
-                'Neighbourhood Intelligence',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: -0.2),
-              ),
-              if (analysis.address != null)
-                Text(
-                  analysis.address!.displayAddress,
-                  style: const TextStyle(fontSize: 11, color: Colors.white38),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              // Score badge — always-visible anchor
+              _ScoreBadge(score: result.score.overall),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Neighbourhood Intelligence',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+                    ),
+                    if (analysis.address != null)
+                      Text(
+                        analysis.address!.displayAddress,
+                        style: const TextStyle(fontSize: 10, color: Colors.white38),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
                 ),
+              ),
             ],
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: TextButton.icon(
+                onPressed: () => context.pushNamed('dashboard'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white54,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.analytics_rounded, size: 15),
+                label: const Text('Full Report', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
         ),
         body: Column(
           children: [
@@ -125,6 +149,66 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
     );
   }
 }
+
+// ── Score badge (AppBar) ──────────────────────────────────────────────────────
+
+class _ScoreBadge extends StatelessWidget {
+  final double score;
+  const _ScoreBadge({required this.score});
+
+  Color _color() {
+    if (score >= 80) return const Color(0xFF4CAF50);
+    if (score >= 60) return const Color(0xFF2196F3);
+    if (score >= 40) return const Color(0xFFFF9800);
+    return const Color(0xFFF44336);
+  }
+
+  String _label() {
+    if (score >= 80) return 'Excellent';
+    if (score >= 60) return 'Good';
+    if (score >= 40) return 'Fair';
+    return 'Poor';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _color();
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.35), width: 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            score.round().toString(),
+            style: TextStyle(
+              color: color,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              height: 1,
+            ),
+          ),
+          Text(
+            _label(),
+            style: TextStyle(
+              color: color.withOpacity(0.85),
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              height: 1.3,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Bottom page indicator ─────────────────────────────────────────────────────
 
 class _BottomIndicator extends StatelessWidget {
   final int current;

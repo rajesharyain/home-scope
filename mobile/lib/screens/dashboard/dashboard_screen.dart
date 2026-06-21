@@ -95,6 +95,14 @@ class DashboardScreen extends ConsumerWidget {
                     .fadeIn(duration: 500.ms)
                     .slideY(begin: 0.1, end: 0),
 
+                const SizedBox(height: 16),
+
+                // ── Return to primary view ──────────────────────────────────
+                _NeighbourhoodIntelligenceCard()
+                    .animate(delay: 100.ms)
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: 0.05, end: 0),
+
                 const SizedBox(height: 20),
 
                 // Category Scores
@@ -153,14 +161,6 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
                 ],
-
-                const SizedBox(height: 24),
-
-                // ── Neighbourhood Intelligence entry point ──────────────────
-                _NeighbourhoodIntelligenceCard()
-                    .animate(delay: 400.ms)
-                    .fadeIn(duration: 500.ms)
-                    .slideY(begin: 0.1, end: 0),
 
                 const SizedBox(height: 32),
               ]),
@@ -355,7 +355,7 @@ class _NeighbourhoodIntelligenceCard extends StatelessWidget {
                         style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       Text(
-                        'Go beyond the score',
+                        'Your primary view — DNA, Timeline, Story & more',
                         style: TextStyle(color: Color(0xFF6C63FF), fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
