@@ -12,6 +12,7 @@ import '../../providers/preferences_provider.dart';
 import '../../widgets/common/shimmer_card.dart';
 import '../../widgets/score/category_card.dart';
 import '../../widgets/score/ai_summary_card.dart';
+import '../../widgets/score/street_view_section.dart';
 import '../../widgets/score/amenity_list_tile.dart';
 import '../../config/app_constants.dart';
 
@@ -119,6 +120,15 @@ class DashboardScreen extends ConsumerWidget {
                   AiSummaryCard(summary: result.aiSummary!)
                       .animate(delay: 300.ms)
                       .fadeIn(duration: 500.ms),
+                  const SizedBox(height: 20),
+                ],
+
+                // Street View
+                if (analysisState.address != null) ...[
+                  StreetViewSection(address: analysisState.address!)
+                      .animate(delay: 350.ms)
+                      .fadeIn(duration: 400.ms)
+                      .slideY(begin: 0.05, end: 0),
                   const SizedBox(height: 20),
                 ],
 
