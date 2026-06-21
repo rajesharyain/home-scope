@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -249,12 +251,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         .fadeIn(duration: 400.ms)
                         .slideY(begin: 0.1, end: 0),
                     const SizedBox(height: 20),
+                    _AppOutputPreview()
+                        .animate(delay: 150.ms)
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.1, end: 0),
+                    const SizedBox(height: 20),
                     _HowItWorksSection()
                         .animate(delay: 200.ms)
                         .fadeIn(duration: 400.ms),
                     const SizedBox(height: 20),
+                    _LiveDataBanner()
+                        .animate(delay: 250.ms)
+                        .fadeIn(duration: 400.ms),
+                    const SizedBox(height: 20),
                     _WhatWeAnalyzeSection()
                         .animate(delay: 300.ms)
+                        .fadeIn(duration: 400.ms),
+                    const SizedBox(height: 20),
+                    _TestimonialsSection()
+                        .animate(delay: 350.ms)
                         .fadeIn(duration: 400.ms),
                   ],
 
@@ -634,6 +649,543 @@ class _CategoryCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── App Output Preview (Score + DNA teaser) ───────────────────────────────────
+
+class _AppOutputPreview extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('What you\'ll get', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('A full neighbourhood picture, in seconds', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 12),
+        _MockScoreCard(),
+        const SizedBox(height: 12),
+        _DNAPreviewCard(),
+      ],
+    );
+  }
+}
+
+// Mock score card —————————————————————————————————————————————————————————————
+
+class _MockScoreCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.analytics_rounded, size: 15, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text('Location Score', style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6, height: 6,
+                        decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+                      ).animate(onPlay: (c) => c.repeat(reverse: true))
+                       .scaleXY(begin: 0.7, end: 1.3, duration: 900.ms, curve: Curves.easeInOut),
+                      const SizedBox(width: 5),
+                      Text('Sample result', style: theme.textTheme.labelSmall?.copyWith(color: Colors.green, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 0.78),
+                    duration: const Duration(milliseconds: 1400),
+                    curve: Curves.easeOutCubic,
+                    builder: (_, v, __) => CustomPaint(
+                      painter: _ScoreRingPainter(v),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              (v * 100).round().toString(),
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF4CAF50), height: 1),
+                            ),
+                            const Text('/100', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: const Column(
+                    children: [
+                      _MiniScoreBar('Transport', 0.82, Color(0xFF29B6F6)),
+                      _MiniScoreBar('Education', 0.91, Color(0xFF66BB6A)),
+                      _MiniScoreBar('Healthcare', 0.65, Color(0xFFEF5350)),
+                      _MiniScoreBar('Shopping', 0.78, Color(0xFFFFA726)),
+                      _MiniScoreBar('Recreation', 0.70, Color(0xFF26C6DA)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScoreRingPainter extends CustomPainter {
+  final double value;
+  _ScoreRingPainter(this.value);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 7;
+    final trackPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, trackPaint);
+    final progressPaint = Paint()
+      ..color = const Color(0xFF4CAF50)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      -pi / 2,
+      2 * pi * value,
+      false,
+      progressPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_ScoreRingPainter old) => old.value != value;
+}
+
+class _MiniScoreBar extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color color;
+  const _MiniScoreBar(this.label, this.value, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 7),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 62,
+            child: Text(label, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 10)),
+          ),
+          Expanded(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: value),
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.easeOutCubic,
+              builder: (_, v, __) => ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: v,
+                  minHeight: 5,
+                  backgroundColor: color.withOpacity(0.12),
+                  valueColor: AlwaysStoppedAnimation(color),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 24,
+            child: Text('${(value * 100).round()}', style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w700), textAlign: TextAlign.right),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// DNA fingerprint preview ——————————————————————————————————————————————————————
+
+class _DNAPreviewCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF080E1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF6C63FF).withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Row(
+              children: [
+                const Icon(Icons.radar_rounded, size: 15, color: Color(0xFF6C63FF)),
+                const SizedBox(width: 6),
+                const Text('Neighbourhood DNA', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6C63FF).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text('Preview', style: TextStyle(color: Color(0xFF9C9AFF), fontSize: 10, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          ),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 1800),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, __) => SizedBox(
+              height: 200,
+              width: double.infinity,
+              child: CustomPaint(painter: _DNAPreviewPainter(v)),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: Text(
+              'Each address generates a unique radar fingerprint across 7 dimensions. Analyze an address to see yours.',
+              style: TextStyle(color: Colors.white.withOpacity(0.38), fontSize: 11, height: 1.45),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DNAPreviewPainter extends CustomPainter {
+  final double animValue;
+  static const _scores = [0.72, 0.85, 0.60, 0.78, 0.90, 0.65, 0.45];
+  static const _colors = [
+    Color(0xFF29B6F6), Color(0xFF66BB6A), Color(0xFFEF5350),
+    Color(0xFFFFA726), Color(0xFF26C6DA), Color(0xFFAB47BC), Color(0xFF8D6E63),
+  ];
+  static const _labels = ['Transport', 'Education', 'Health', 'Shopping', 'Recreation', 'Safety', 'Religion'];
+
+  _DNAPreviewPainter(this.animValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    const n = 7;
+    final maxRadius = min(size.width, size.height) / 2 - 32;
+
+    // Background rings
+    for (var r = 1; r <= 4; r++) {
+      canvas.drawCircle(center, maxRadius * r / 4,
+        Paint()..color = Colors.white.withOpacity(0.05)..style = PaintingStyle.stroke..strokeWidth = 1);
+    }
+
+    // Spokes
+    for (var i = 0; i < n; i++) {
+      final angle = (2 * pi * i / n) - pi / 2;
+      canvas.drawLine(center, center + Offset(cos(angle) * maxRadius, sin(angle) * maxRadius),
+        Paint()..color = Colors.white.withOpacity(0.07)..strokeWidth = 1);
+    }
+
+    // Score points
+    final pts = List.generate(n, (i) {
+      final angle = (2 * pi * i / n) - pi / 2;
+      final r = maxRadius * _scores[i] * animValue;
+      return center + Offset(cos(angle) * r, sin(angle) * r);
+    });
+
+    // Filled polygon
+    final path = Path()..moveTo(pts[0].dx, pts[0].dy);
+    for (var i = 1; i < n; i++) { path.lineTo(pts[i].dx, pts[i].dy); }
+    path.close();
+
+    canvas.drawPath(path, Paint()
+      ..shader = RadialGradient(colors: [
+        const Color(0xFF6C63FF).withOpacity(0.45),
+        const Color(0xFF6C63FF).withOpacity(0.08),
+      ]).createShader(Rect.fromCircle(center: center, radius: maxRadius))
+      ..style = PaintingStyle.fill);
+
+    canvas.drawPath(path, Paint()
+      ..color = const Color(0xFF6C63FF).withOpacity(0.85)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeJoin = StrokeJoin.round);
+
+    // Colored dots on vertices
+    for (var i = 0; i < n; i++) {
+      canvas.drawCircle(pts[i], 4.5, Paint()..color = _colors[i]);
+      canvas.drawCircle(pts[i], 4.5, Paint()
+        ..color = Colors.white.withOpacity(0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1);
+    }
+
+    // Labels (fade in after polygon appears)
+    if (animValue > 0.6) {
+      final labelOpacity = ((animValue - 0.6) / 0.4).clamp(0.0, 1.0);
+      for (var i = 0; i < n; i++) {
+        final angle = (2 * pi * i / n) - pi / 2;
+        final labelPos = center + Offset(cos(angle) * (maxRadius + 18), sin(angle) * (maxRadius + 18));
+        final tp = TextPainter(
+          text: TextSpan(text: _labels[i], style: TextStyle(color: _colors[i].withOpacity(labelOpacity), fontSize: 9, fontWeight: FontWeight.w600)),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        tp.paint(canvas, labelPos - Offset(tp.width / 2, tp.height / 2));
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DNAPreviewPainter old) => old.animValue != animValue;
+}
+
+// ── Live Data Banner ──────────────────────────────────────────────────────────
+
+class _LiveDataBanner extends StatelessWidget {
+  static const _points = [
+    (icon: Icons.map_rounded,       text: 'OpenStreetMap — 100+ real amenities fetched live per address'),
+    (icon: Icons.psychology_rounded, text: 'OpenAI — neighbourhood summary generated fresh, on demand'),
+    (icon: Icons.update_rounded,    text: 'No caching — every score reflects what\'s on the map today'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _PulseDot(),
+              const SizedBox(width: 10),
+              Text('Powered by live data', style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ..._points.map((p) => Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(p.icon, size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 10),
+                Expanded(child: Text(p.text, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45))),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _PulseDot extends StatefulWidget {
+  @override
+  State<_PulseDot> createState() => _PulseDotState();
+}
+
+class _PulseDotState extends State<_PulseDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat(reverse: true);
+  late final Animation<double> _anim = Tween<double>(begin: 0.5, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Container(
+        width: 10, height: 10,
+        decoration: BoxDecoration(
+          color: Colors.green.withOpacity(_anim.value),
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.green.withOpacity(_anim.value * 0.6), blurRadius: 6, spreadRadius: 1)],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Testimonials ──────────────────────────────────────────────────────────────
+
+class _TestimonialsSection extends StatelessWidget {
+  static const _testimonials = [
+    (
+      name: 'Sara M.',
+      city: 'Lisbon',
+      initial: 'S',
+      color: Color(0xFF6C63FF),
+      score: 94,
+      text: 'We looked at 8 addresses before settling on Mouraria. HomeScope showed us the transport and safety scores we\'d never have found just by walking around. Made the decision easy.',
+    ),
+    (
+      name: 'João F.',
+      city: 'Porto',
+      initial: 'J',
+      color: Color(0xFF00BCD4),
+      score: 88,
+      text: 'As a property investor I screen multiple addresses each week. The AI summary gives me a fast read on each neighbourhood before I even visit. Saves me 3–4 hours per property.',
+    ),
+    (
+      name: 'Ana & Tiago',
+      city: 'Braga',
+      initial: 'A',
+      color: Color(0xFF4CAF50),
+      score: 91,
+      text: 'Education and safety were everything with two young kids. HomeScope surfaced a neighbourhood we\'d never have considered — it ended up being perfect for our family.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('What people say', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 4),
+        Text('From families, investors, and first-time buyers in Portugal', style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 195,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            itemCount: _testimonials.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, i) {
+              final t = _testimonials[i];
+              return _TestimonialCard(
+                name: t.name, city: t.city, initial: t.initial,
+                accentColor: t.color, score: t.score, text: t.text,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TestimonialCard extends StatelessWidget {
+  final String name;
+  final String city;
+  final String initial;
+  final Color accentColor;
+  final int score;
+  final String text;
+
+  const _TestimonialCard({
+    required this.name, required this.city, required this.initial,
+    required this.accentColor, required this.score, required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 258,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: accentColor.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18,
+                backgroundColor: accentColor.withOpacity(0.15),
+                child: Text(initial, style: TextStyle(color: accentColor, fontWeight: FontWeight.w800, fontSize: 15)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(city, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('$score', style: const TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.w900, fontSize: 14)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Text(
+              '"$text"',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+                fontStyle: FontStyle.italic,
+              ),
+              overflow: TextOverflow.fade,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(children: List.generate(5, (_) => const Icon(Icons.star_rounded, size: 13, color: Color(0xFFFFA726)))),
+        ],
       ),
     );
   }
