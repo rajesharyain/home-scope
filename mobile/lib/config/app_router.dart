@@ -7,6 +7,7 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/map/map_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/history/history_screen.dart';
+import '../screens/neighborhood/neighborhood_screen.dart';
 import '../models/address_model.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -39,6 +40,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final address = state.extra as AddressModel?;
           return MapScreen(address: address);
         },
+      ),
+      GoRoute(
+        path: '/neighborhood',
+        name: 'neighborhood',
+        builder: (context, state) => const NeighborhoodScreen(),
       ),
       GoRoute(
         path: '/settings',

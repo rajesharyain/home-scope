@@ -241,17 +241,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         )),
                   ],
 
-                  // Feature highlights
+                  // In-app landing experience (shown when no history)
                   if (history.isEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(
-                      'What we analyze',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _FeatureGrid(),
+                    _WhatWeDoCard()
+                        .animate(delay: 100.ms)
+                        .fadeIn(duration: 400.ms)
+                        .slideY(begin: 0.1, end: 0),
+                    const SizedBox(height: 20),
+                    _HowItWorksSection()
+                        .animate(delay: 200.ms)
+                        .fadeIn(duration: 400.ms),
+                    const SizedBox(height: 20),
+                    _WhatWeAnalyzeSection()
+                        .animate(delay: 300.ms)
+                        .fadeIn(duration: 400.ms),
                   ],
 
                   const SizedBox(height: 32),
@@ -325,53 +329,312 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-class _FeatureGrid extends StatelessWidget {
-  final features = const [
-    (icon: Icons.train_rounded, label: 'Transport', color: Color(0xFF2196F3)),
-    (icon: Icons.school_rounded, label: 'Education', color: Color(0xFF4CAF50)),
-    (icon: Icons.local_hospital_rounded, label: 'Healthcare', color: Color(0xFFF44336)),
-    (icon: Icons.shopping_cart_rounded, label: 'Shopping', color: Color(0xFFFF9800)),
-    (icon: Icons.park_rounded, label: 'Recreation', color: Color(0xFF00BCD4)),
-    (icon: Icons.psychology_rounded, label: 'AI Summary', color: Color(0xFF9C27B0)),
+// ── What We Do ────────────────────────────────────────────────────────────────
+
+class _WhatWeDoCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            theme.colorScheme.primaryContainer.withOpacity(0.5),
+            theme.colorScheme.secondaryContainer.withOpacity(0.3),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.home_work_rounded, color: theme.colorScheme.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'What is HomeScope?',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'HomeScope helps you make smarter home-buying and renting decisions by scoring any address across what truly matters — transport links, schools, hospitals, shops, parks, and more.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'We pull real-time data from OpenStreetMap and combine it with AI-powered analysis to give you a clear, objective picture of life in that neighbourhood before you commit.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── How It Works ──────────────────────────────────────────────────────────────
+
+class _HowItWorksSection extends StatelessWidget {
+  static const _steps = [
+    (
+      icon: Icons.edit_location_alt_rounded,
+      color: Color(0xFF6C63FF),
+      title: 'Enter address',
+      body: 'Type any street address. HomeScope supports Portugal and is expanding to more countries.',
+    ),
+    (
+      icon: Icons.radar_rounded,
+      color: Color(0xFF00BCD4),
+      title: 'AI scans nearby',
+      body: 'We fetch 100+ amenities within 2 km and weigh them by distance, type, and your life profile.',
+    ),
+    (
+      icon: Icons.insights_rounded,
+      color: Color(0xFF4CAF50),
+      title: 'Get your score',
+      body: 'Receive a 0–100 location score, category breakdown, AI summary, and interactive maps.',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return GridView.count(
-      crossAxisCount: 3,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.1,
-      children: features
-          .map(
-            (f) => Card(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: f.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(f.icon, color: f.color, size: 24),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'How it works',
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _steps.asMap().entries.map((e) {
+            final i = e.key;
+            final s = e.value;
+            return Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(right: i < _steps.length - 1 ? 10 : 0),
+                child: _StepCard(step: i + 1, icon: s.icon, color: s.color, title: s.title, body: s.body),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+}
+
+class _StepCard extends StatelessWidget {
+  final int step;
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+
+  const _StepCard({
+    required this.step,
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    f.label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                  child: Icon(icon, color: color, size: 22),
+                ),
+                Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$step',
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
                     ),
-                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(title, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            Text(body, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── What We Analyze ───────────────────────────────────────────────────────────
+
+class _WhatWeAnalyzeSection extends StatelessWidget {
+  static const _categories = [
+    (
+      icon: Icons.train_rounded,
+      label: 'Transportation',
+      color: Color(0xFF29B6F6),
+      description: 'Bus stops, metro stations, tram lines, and rail connections within walking distance. We measure frequency, coverage, and how easily you can get around without a car.',
+    ),
+    (
+      icon: Icons.school_rounded,
+      label: 'Education',
+      color: Color(0xFF66BB6A),
+      description: 'Nurseries, primary schools, secondary schools, universities, and public libraries. Weighted by proximity and variety — critical for families and lifelong learners alike.',
+    ),
+    (
+      icon: Icons.local_hospital_rounded,
+      label: 'Healthcare',
+      color: Color(0xFFEF5350),
+      description: 'Hospitals, health centres, clinics, pharmacies, and dentists nearby. We score access to emergency care separately from routine healthcare availability.',
+    ),
+    (
+      icon: Icons.shopping_bag_rounded,
+      label: 'Shopping',
+      color: Color(0xFFFFA726),
+      description: 'Supermarkets, convenience stores, markets, bakeries, and retail shops for everyday needs. Covers both daily essentials and weekly grocery runs.',
+    ),
+    (
+      icon: Icons.park_rounded,
+      label: 'Recreation',
+      color: Color(0xFF26C6DA),
+      description: 'Parks, gardens, gyms, sports pitches, cafés, restaurants, cinemas, and cultural venues. Measures how vibrant and liveable a neighbourhood feels day-to-day.',
+    ),
+    (
+      icon: Icons.shield_rounded,
+      label: 'Safety',
+      color: Color(0xFFAB47BC),
+      description: 'Proximity to police stations, fire brigades, and emergency services. Combined with neighbourhood density signals to estimate how safe and well-served the area is.',
+    ),
+    (
+      icon: Icons.church_rounded,
+      label: 'Religion',
+      color: Color(0xFF8D6E63),
+      description: 'Churches, mosques, synagogues, temples, and other places of worship. Scored for those for whom community and spiritual life are part of choosing a home.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'What we analyze',
+          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '7 categories scored from real OpenStreetMap data',
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 12),
+        ..._categories.map((c) => _CategoryCard(
+              icon: c.icon,
+              label: c.label,
+              color: c.color,
+              description: c.description,
+            )),
+      ],
+    );
+  }
+}
+
+class _CategoryCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final String description;
+
+  const _CategoryCard({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.description,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
             ),
-          )
-          .toList(),
+          ],
+        ),
+      ),
     );
   }
 }

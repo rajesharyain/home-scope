@@ -154,6 +154,14 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                 ],
 
+                const SizedBox(height: 24),
+
+                // ── Neighbourhood Intelligence entry point ──────────────────
+                _NeighbourhoodIntelligenceCard()
+                    .animate(delay: 400.ms)
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: 0.1, end: 0),
+
                 const SizedBox(height: 32),
               ]),
             ),
@@ -296,6 +304,110 @@ class _OverallScoreCard extends StatelessWidget {
       'investor': 'Investor',
     };
     return labels[profile] ?? profile;
+  }
+}
+
+class _NeighbourhoodIntelligenceCard extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.pushNamed('neighborhood'),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF111827), Color(0xFF1E1B4B)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.4), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6C63FF).withOpacity(0.15),
+              blurRadius: 24,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6C63FF), Color(0xFF9C63FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Neighbourhood Intelligence',
+                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        'Go beyond the score',
+                        style: TextStyle(color: Color(0xFF6C63FF), fontSize: 12, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 16),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                _FeaturePill('🧬', 'DNA'),
+                SizedBox(width: 8),
+                _FeaturePill('🗺', 'Radius'),
+                SizedBox(width: 8),
+                _FeaturePill('⏱', 'Timeline'),
+                SizedBox(width: 8),
+                _FeaturePill('📖', 'Story'),
+                SizedBox(width: 8),
+                _FeaturePill('🔮', 'Future'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FeaturePill extends StatelessWidget {
+  final String emoji;
+  final String label;
+  const _FeaturePill(this.emoji, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6C63FF).withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF6C63FF).withOpacity(0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 11)),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(color: Color(0xFF9C9AFF), fontSize: 10, fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
   }
 }
 
