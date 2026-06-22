@@ -6,7 +6,8 @@ import '../../models/score_model.dart';
 
 class DNAWidget extends StatefulWidget {
   final LocationScore score;
-  const DNAWidget({super.key, required this.score});
+  final double topPadding;
+  const DNAWidget({super.key, required this.score, this.topPadding = 100});
 
   @override
   State<DNAWidget> createState() => _DNAWidgetState();
@@ -58,7 +59,7 @@ class _DNAWidgetState extends State<DNAWidget> with SingleTickerProviderStateMix
     return SingleChildScrollView(
       child: Column(
         children: [
-          const SizedBox(height: 100),
+          SizedBox(height: widget.topPadding),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(

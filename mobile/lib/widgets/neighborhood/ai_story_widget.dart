@@ -16,8 +16,9 @@ class _Persona {
 class AIStoryWidget extends StatefulWidget {
   // We use AnalysisResult directly but only need score + aiSummary
   final dynamic result; // AnalysisResult
+  final double topPadding;
 
-  const AIStoryWidget({super.key, required this.result});
+  const AIStoryWidget({super.key, required this.result, this.topPadding = 100});
 
   @override
   State<AIStoryWidget> createState() => _AIStoryWidgetState();
@@ -158,7 +159,7 @@ class _AIStoryWidgetState extends State<AIStoryWidget>
     final cautions = sorted.reversed.take(2).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 100, bottom: 32),
+      padding: EdgeInsets.only(top: widget.topPadding, bottom: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

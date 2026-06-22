@@ -8,12 +8,14 @@ class LifeRadiusWidget extends StatefulWidget {
   final List<AmenityModel> amenities;
   final double? addressLat;
   final double? addressLng;
+  final double topPadding;
 
   const LifeRadiusWidget({
     super.key,
     required this.amenities,
     this.addressLat,
     this.addressLng,
+    this.topPadding = 100,
   });
 
   @override
@@ -80,7 +82,7 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 100),
+        SizedBox(height: widget.topPadding),
 
         // Header
         Padding(

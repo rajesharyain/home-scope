@@ -6,7 +6,8 @@ import '../../models/score_model.dart';
 
 class FutureScoreWidget extends StatefulWidget {
   final LocationScore score;
-  const FutureScoreWidget({super.key, required this.score});
+  final double topPadding;
+  const FutureScoreWidget({super.key, required this.score, this.topPadding = 100});
 
   @override
   State<FutureScoreWidget> createState() => _FutureScoreWidgetState();
@@ -97,7 +98,7 @@ class _FutureScoreWidgetState extends State<FutureScoreWidget>
     final selected = _selectedMilestone != null ? milestones[_selectedMilestone!] : null;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.only(top: 100, bottom: 32),
+      padding: EdgeInsets.only(top: widget.topPadding, bottom: 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

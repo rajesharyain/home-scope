@@ -6,8 +6,9 @@ import '../../models/score_model.dart';
 
 class TimeMachineWidget extends StatefulWidget {
   final LocationScore score;
+  final double topPadding;
 
-  const TimeMachineWidget({super.key, required this.score});
+  const TimeMachineWidget({super.key, required this.score, this.topPadding = 96});
 
   @override
   State<TimeMachineWidget> createState() => _TimeMachineWidgetState();
@@ -139,7 +140,7 @@ class _TimeMachineWidgetState extends State<TimeMachineWidget> {
                   }),
                 // Content
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 96, 24, 20),
+                  padding: EdgeInsets.fromLTRB(24, widget.topPadding, 24, 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
