@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/address_model.dart';
 import '../../models/score_model.dart';
@@ -58,7 +59,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
         appBar: AppBar(
           backgroundColor: kNbDarkBg,
           foregroundColor: Colors.white,
-          title: const Text('Neighbourhood Intelligence'),
+          title: const Text('Living Index'),
           leading: BackButton(onPressed: () => context.pop()),
         ),
         body: const Center(
@@ -88,7 +89,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Neighbourhood Intelligence',
+                'Living Index',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: -0.2),
               ),
               if (analysis.address != null)
@@ -164,6 +165,23 @@ class _ScoreStrip extends StatelessWidget {
 
   const _ScoreStrip({required this.score, this.address});
 
+  static Future<void> _launchStreetView(BuildContext context, double lat, double lng) async {
+    final url = Uri.parse(
+      'https://www.google.com/maps/@?api=1&map_action=pano'
+      '&viewpoint=${lat.toStringAsFixed(6)},${lng.toStringAsFixed(6)}',
+    );
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open Street View.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   Color _color() {
     final s = score.overall;
     if (s >= 80) return const Color(0xFF4CAF50);
@@ -224,12 +242,39 @@ class _ScoreStrip extends StatelessWidget {
                   style: const TextStyle(color: Colors.white38, fontSize: 11.5),
                 ),
                 if (address != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    address!.displayAddress,
-                    style: const TextStyle(color: Colors.white24, fontSize: 10.5),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          address!.displayAddress,
+                          style: const TextStyle(color: Colors.white24, fontSize: 10.5),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (address!.lat != null && address!.lng != null) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () => _launchStreetView(context, address!.lat!, address!.lng!),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.streetview_rounded, size: 12, color: Color(0xFF6C63FF)),
+                              SizedBox(width: 3),
+                              Text(
+                                'Street View',
+                                style: TextStyle(
+                                  color: Color(0xFF6C63FF),
+                                  fontSize: 10.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ],

@@ -96,7 +96,7 @@ class DashboardScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // ── Return to primary view ──────────────────────────────────
-                _NeighbourhoodIntelligenceCard()
+                _LivingIndexCard()
                     .animate(delay: 100.ms)
                     .fadeIn(duration: 400.ms)
                     .slideY(begin: 0.05, end: 0),
@@ -195,7 +195,7 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 
-class _NeighbourhoodIntelligenceCard extends StatelessWidget {
+class _LivingIndexCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -239,7 +239,7 @@ class _NeighbourhoodIntelligenceCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Neighbourhood Intelligence',
+                        'Living Index',
                         style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                       Text(
