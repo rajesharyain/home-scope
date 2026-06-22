@@ -10,6 +10,7 @@ import '../../widgets/neighborhood/life_radius_widget.dart';
 import '../../widgets/neighborhood/time_machine_widget.dart';
 import '../../widgets/neighborhood/ai_story_widget.dart';
 import '../../widgets/neighborhood/future_score_widget.dart';
+import '../../widgets/score/overall_score_card.dart';
 
 const kNbDarkBg = Color(0xFF080E1A);
 const kNbSurface = Color(0xFF111827);
@@ -119,6 +120,12 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
           children: [
             // ── Score strip — primary visual anchor ─────────────────────
             _ScoreStrip(score: result.score, address: analysis.address),
+
+            // ── Location score card (as in full report) ──────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+              child: OverallScoreCard(score: result.score),
+            ),
 
             // ── NI pages ────────────────────────────────────────────────
             Expanded(
