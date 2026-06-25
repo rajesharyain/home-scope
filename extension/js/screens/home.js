@@ -82,9 +82,46 @@ function homeHTML() {
 
         <div class="hm-divider"></div>
 
+        <!-- Problem statement -->
+        <div class="hm-headline">The problem</div>
+        <p class="hm-problem-lead">Finding a home means researching a neighbourhood — but nobody makes that easy.</p>
+
+        <div class="hm-problems">
+          <div class="hm-problem-item">
+            <span class="hm-problem-icon">😩</span>
+            <div>
+              <div class="hm-problem-title">Six tools, one decision</div>
+              <div class="hm-problem-desc">To properly research a location you open Google Maps for walkability, a school ratings site, a crime map, a flood-risk checker, a price-trend chart, and Reddit. That's before you've even visited.</div>
+            </div>
+          </div>
+          <div class="hm-problem-item">
+            <span class="hm-problem-icon">🏠</span>
+            <div>
+              <div class="hm-problem-title">Property sites show the house, not the life</div>
+              <div class="hm-problem-desc">Rightmove, Idealista and Zillow tell you the bedrooms and the price. None of them tell you whether you'll regret the location in 6 months.</div>
+            </div>
+          </div>
+          <div class="hm-problem-item">
+            <span class="hm-problem-icon">⏱</span>
+            <div>
+              <div class="hm-problem-title">Decisions made under pressure</div>
+              <div class="hm-problem-desc">Good properties go fast. You have a weekend, not a month, to decide if a neighbourhood fits your life. Most people guess — and some get it wrong.</div>
+            </div>
+          </div>
+          <div class="hm-problem-item">
+            <span class="hm-problem-icon">🕳</span>
+            <div>
+              <div class="hm-problem-title">You don't know what you don't know</div>
+              <div class="hm-problem-desc">The flight path overhead. The school that's outstanding but oversubscribed. The park that floods. The planned development 400m away. These surface after you've signed.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hm-divider"></div>
+
         <!-- Value props -->
-        <div class="hm-headline">What HomeScope does</div>
-        <p class="hm-sub">Property sites show you the house. We show you the life around it.</p>
+        <div class="hm-headline">How HomeScope solves it</div>
+        <p class="hm-sub">One search. Every dimension of a location. Personalised to your life.</p>
 
         <div class="hm-props">
           <div class="hm-prop">
