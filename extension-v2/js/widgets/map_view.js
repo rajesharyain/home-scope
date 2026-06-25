@@ -1,16 +1,20 @@
-// NeighborLens – Map View Widget
-// Renders an interactive property intelligence map using MapLibre GL JS or Leaflet.
+// NeighborLens – Map View Widget (Enhanced)
+// Phase 1: Overpass POIs, SVG markers, rich popups, category filter bar, loading state
+// Phase 4: Mode descriptions and visual legend
+// Phase 6: Buyer intelligence must-have filter
+
+import { fetchOverpassPOIs, mergeAmenities } from '../services/overpass.js';
 
 // ── Constants ───────────────────────────────────────────────────────────────────
 
 const CAT_COLORS = {
-  transportation: '#3B82F6',
-  education:      '#8B5CF6',
-  healthcare:     '#EF4444',
-  shopping:       '#F59E0B',
-  safety:         '#10B981',
-  religion:       '#06B6D4',
-  recreation:     '#22C55E',
+  transportation: '#29B6F6',
+  education:      '#66BB6A',
+  healthcare:     '#EF5350',
+  shopping:       '#FFA726',
+  safety:         '#AB47BC',
+  religion:       '#8D6E63',
+  recreation:     '#26C6DA',
 };
 
 const CAT_EMOJI = {
@@ -33,12 +37,31 @@ const CAT_LABELS = {
   recreation:     'Parks',
 };
 
+// SVG path data per category (24×24 viewport, stroke-based icons)
+const CAT_SVG = {
+  transportation: '<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>',
+  education:      '<path d="M22 10v6M2 10l10-3 10 3-10 3-10-3z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>',
+  healthcare:     '<path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v8M8 12h8"/>',
+  shopping:       '<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 01-8 0"/>',
+  safety:         '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  religion:       '<path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>',
+  recreation:     '<path d="M17 22L12 2 7 22"/><path d="M3 9h18"/>',
+};
+
 const MODES = {
   all:          ['transportation','education','healthcare','shopping','safety','religion','recreation'],
   family:       ['education','healthcare','recreation','shopping'],
   investor:     ['transportation','shopping','recreation'],
   professional: ['transportation','recreation','shopping'],
   nature:       ['recreation'],
+};
+
+const MODE_DESCS = {
+  all:          'Showing all 7 categories',
+  family:       'Showing schools, health, parks & shops',
+  investor:     'Showing transit, shops & recreation',
+  professional: 'Showing transit, recreation & shops',
+  nature:       'Showing parks & green spaces only',
 };
 
 const KEY_CATS = [
@@ -48,18 +71,25 @@ const KEY_CATS = [
   { id: 'recreation',     emoji: '🌳', label: 'Nearest Park' },
 ];
 
+const BUYER_PREFS = [
+  { id: 'school',    label: '🎓 School within 1km',    cat: 'education',      threshold: 1000 },
+  { id: 'transit',   label: '🚇 Transit within 500m',  cat: 'transportation', threshold: 500  },
+  { id: 'hospital',  label: '🏥 Hospital within 2km',  cat: 'healthcare',     threshold: 2000 },
+  { id: 'park',      label: '🌳 Park within 500m',     cat: 'recreation',     threshold: 500  },
+  { id: 'shopping',  label: '🛍 Shops within 1km',     cat: 'shopping',       threshold: 1000 },
+];
+
 // ── Public API ──────────────────────────────────────────────────────────────────
 
 /**
  * Renders the interactive property intelligence map into `container`.
  * @param {HTMLElement} container
- * @param {object} result  – API result object
+ * @param {object} result — API result object
  */
 export function renderMapView(container, result) {
   const lat = result?.address?.lat;
   const lng = result?.address?.lng;
 
-  // No coordinates — show empty state
   if (!lat || !lng) {
     container.innerHTML = `
       <div class="mv-screen">
@@ -68,17 +98,17 @@ export function renderMapView(container, result) {
           <div style="font-size:14px;font-weight:600;color:var(--text2)">No location data</div>
           <div style="font-size:12px;color:var(--text3);margin-top:4px">GPS coordinates were not returned for this address.</div>
         </div>
-      </div>
-    `;
+      </div>`;
     return;
   }
 
   let activeMode   = 'all';
   let activeRadius = 500;
-  let allMarkers   = [];   // { markerObj, amenity, isLeaflet }
-  let circleLayer  = null; // MapLibre source/layer or Leaflet circle
+  let allMarkers   = [];
+  let circleLayer  = null;
   let mapInstance  = null;
   let isLeaflet    = false;
+  let activeCatFilters = new Set(Object.keys(CAT_COLORS)); // all on by default
 
   // ── Render shell HTML ────────────────────────────────────────────────────────
   container.innerHTML = `
@@ -90,16 +120,31 @@ export function renderMapView(container, result) {
         <button class="mv-mode" data-mode="professional">☕ Pro</button>
         <button class="mv-mode" data-mode="nature">🌳 Nature</button>
       </div>
+      <div class="mv-mode-desc" id="mv-mode-desc">${MODE_DESCS.all}</div>
       <div class="mv-radius-row" id="mv-radius-row">
         <span class="mv-radius-label">Show within</span>
         <button class="mv-radius-btn active" data-r="500">500m</button>
         <button class="mv-radius-btn" data-r="1000">1 km</button>
         <button class="mv-radius-btn" data-r="2000">2 km</button>
       </div>
-      <div id="mv-map" class="mv-map"></div>
+      <div class="mv-cat-filters" id="mv-cat-filters"></div>
+      <div id="mv-map" class="mv-map" style="position:relative;">
+        <div class="mv-loading" id="mv-loading" style="display:none">
+          <div class="mv-spinner"></div>
+        </div>
+      </div>
       <div class="mv-intel" id="mv-intel"></div>
-    </div>
-  `;
+      <div class="mv-buyer-prefs" id="mv-buyer-prefs">
+        <div class="mv-section-label">MUST HAVE NEARBY</div>
+        <div class="mv-pref-row">
+          ${BUYER_PREFS.map(p => `
+            <label class="mv-pref-toggle">
+              <input type="checkbox" data-pref="${p.id}"> ${p.label}
+            </label>`).join('')}
+        </div>
+        <div class="mv-match-score" id="mv-match-score"></div>
+      </div>
+    </div>`;
 
   // ── Detect library ───────────────────────────────────────────────────────────
   const hasMapLibre = typeof maplibregl !== 'undefined';
@@ -119,31 +164,73 @@ export function renderMapView(container, result) {
     mapInstance = _initLeaflet(lat, lng);
   }
 
-  // ── Build initial intel panel ────────────────────────────────────────────────
-  _renderIntel(container.querySelector('#mv-intel'), result, activeRadius);
+  // ── Initial intel panel ──────────────────────────────────────────────────────
+  _renderIntel(container.querySelector('#mv-intel'), result, activeRadius, []);
 
-  // ── Place markers after map loads ────────────────────────────────────────────
-  if (hasMapLibre) {
-    mapInstance.on('load', () => {
-      _placeHomeMarkerMapLibre(mapInstance, lat, lng);
-      allMarkers = _placeAmenityMarkersMapLibre(mapInstance, result, lat, lng);
-      _drawRadiusMapLibre(mapInstance, lat, lng, activeRadius);
-      _applyModeFilter(allMarkers, activeMode, false);
-    });
-  } else {
-    // Leaflet is synchronous
-    _placeHomeMarkerLeaflet(mapInstance, lat, lng);
-    allMarkers = _placeAmenityMarkersLeaflet(mapInstance, result, lat, lng);
-    circleLayer = _drawRadiusLeaflet(mapInstance, lat, lng, activeRadius);
-  }
+  // ── Load Overpass data and merge with backend data ───────────────────────────
+  const loadOverpassData = async () => {
+    const loadingEl = container.querySelector('#mv-loading');
+    if (loadingEl) loadingEl.style.display = 'flex';
 
-  // ── Resize after sidebar layout settles ─────────────────────────────────────
-  setTimeout(() => {
-    if (hasMapLibre) {
-      mapInstance.resize();
-    } else {
-      mapInstance.invalidateSize();
+    let mergedAmenities = result.amenities || [];
+
+    try {
+      const overpassPOIs = await fetchOverpassPOIs(lat, lng, Math.max(activeRadius, 1000));
+      mergedAmenities = mergeAmenities(result.amenities, overpassPOIs);
+    } catch (err) {
+      console.warn('[NeighborLens] Overpass fetch failed, using backend data only:', err.message);
     }
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    // Enrich result with merged data for this widget session
+    const enrichedResult = { ...result, amenities: mergedAmenities };
+
+    // Place markers
+    if (hasMapLibre) {
+      const onLoad = () => {
+        _placeHomeMarkerMapLibre(mapInstance, lat, lng);
+        allMarkers = _placeAmenityMarkersMapLibre(mapInstance, enrichedResult, lat, lng);
+        _drawRadiusMapLibre(mapInstance, lat, lng, activeRadius);
+        _applyFilters(allMarkers, activeMode, activeCatFilters, false);
+        _renderCatFilters(container, enrichedResult, activeCatFilters, (cat, on) => {
+          if (on) activeCatFilters.add(cat);
+          else activeCatFilters.delete(cat);
+          _applyFilters(allMarkers, activeMode, activeCatFilters, isLeaflet);
+        });
+        _renderIntel(container.querySelector('#mv-intel'), enrichedResult, activeRadius, mergedAmenities);
+      };
+
+      if (mapInstance.loaded()) {
+        onLoad();
+      } else {
+        mapInstance.on('load', onLoad);
+      }
+    } else {
+      // Leaflet is synchronous
+      _placeHomeMarkerLeaflet(mapInstance, lat, lng);
+      allMarkers = _placeAmenityMarkersLeaflet(mapInstance, enrichedResult, lat, lng);
+      circleLayer = _drawRadiusLeaflet(mapInstance, lat, lng, activeRadius);
+      _applyFilters(allMarkers, activeMode, activeCatFilters, true);
+      _renderCatFilters(container, enrichedResult, activeCatFilters, (cat, on) => {
+        if (on) activeCatFilters.add(cat);
+        else activeCatFilters.delete(cat);
+        _applyFilters(allMarkers, activeMode, activeCatFilters, isLeaflet);
+      });
+      _renderIntel(container.querySelector('#mv-intel'), enrichedResult, activeRadius, mergedAmenities);
+    }
+
+    // Wire buyer prefs against enriched data
+    _wireBuyerPrefs(container, enrichedResult);
+  };
+
+  // Trigger Overpass load
+  loadOverpassData();
+
+  // ── Resize after layout settles ──────────────────────────────────────────────
+  setTimeout(() => {
+    if (hasMapLibre) mapInstance.resize();
+    else mapInstance.invalidateSize();
   }, 250);
 
   // ── Mode buttons ─────────────────────────────────────────────────────────────
@@ -152,7 +239,8 @@ export function renderMapView(container, result) {
     if (!btn) return;
     activeMode = btn.dataset.mode;
     container.querySelectorAll('.mv-mode').forEach(b => b.classList.toggle('active', b === btn));
-    _applyModeFilter(allMarkers, activeMode, isLeaflet);
+    container.querySelector('#mv-mode-desc').textContent = MODE_DESCS[activeMode] || '';
+    _applyFilters(allMarkers, activeMode, activeCatFilters, isLeaflet);
   });
 
   // ── Radius buttons ───────────────────────────────────────────────────────────
@@ -169,18 +257,181 @@ export function renderMapView(container, result) {
       circleLayer = _drawRadiusLeaflet(mapInstance, lat, lng, activeRadius);
     }
 
-    _renderIntel(container.querySelector('#mv-intel'), result, activeRadius);
+    // Re-render intel with current merged amenities (pull from markers)
+    const currentAmenities = allMarkers.map(m => m.amenity);
+    _renderIntel(container.querySelector('#mv-intel'), result, activeRadius, currentAmenities);
   });
+}
+
+// ── SVG Marker creation ─────────────────────────────────────────────────────────
+
+/**
+ * Create a styled HTML marker element for a category.
+ * @param {string} category
+ * @param {string} name
+ * @returns {HTMLElement}
+ */
+function createMarkerEl(category, name) {
+  const color = CAT_COLORS[category] || '#888';
+  const svgPath = CAT_SVG[category] || '<circle cx="12" cy="12" r="5"/>';
+  const el = document.createElement('div');
+  el.className = 'mv-marker';
+  el.style.cssText = `--mc:${color}`;
+  el.innerHTML = `
+    <div class="mv-marker-bubble">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${svgPath}
+      </svg>
+    </div>
+    <div class="mv-marker-tail"></div>`;
+  el.setAttribute('title', name);
+  return el;
+}
+
+/**
+ * Build the HTML for a rich popup.
+ */
+function buildPopupHTML(amenity) {
+  const color   = CAT_COLORS[amenity.category] || '#888';
+  const emoji   = CAT_EMOJI[amenity.category] || '📍';
+  const catLabel = CAT_LABELS[amenity.category] || amenity.category;
+  const name    = amenity.name || amenity.type || 'Place';
+  const dist    = amenity.distance_meters != null ? `${amenity.distance_meters}m` : '—';
+  const walk    = amenity.walking_minutes != null ? `${amenity.walking_minutes} min` : '—';
+  const tags    = amenity.tags || {};
+
+  return `
+    <div class="mv-popup">
+      <div class="mv-popup-header" style="border-left:3px solid ${color};padding-left:8px">
+        <span class="mv-popup-emoji">${emoji}</span>
+        <div>
+          <div class="mv-popup-name">${_esc(name)}</div>
+          <div class="mv-popup-cat">${_esc(catLabel)}</div>
+        </div>
+      </div>
+      <div class="mv-popup-stats">
+        <span>📏 ${dist}</span>
+        <span>🚶 ${walk}</span>
+      </div>
+      ${tags.opening_hours ? `<div class="mv-popup-hours">🕐 ${_esc(tags.opening_hours)}</div>` : ''}
+      ${tags.website ? `<a href="${_esc(tags.website)}" target="_blank" rel="noopener" class="mv-popup-link">Visit website ↗</a>` : ''}
+    </div>`;
+}
+
+function _esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Category filter bar ─────────────────────────────────────────────────────────
+
+/**
+ * Render the category filter pill bar.
+ */
+function _renderCatFilters(container, result, activeCatFilters, onToggle) {
+  const amenities = result.amenities || [];
+  const filterEl = container.querySelector('#mv-cat-filters');
+  if (!filterEl) return;
+
+  // Count per category
+  const counts = {};
+  for (const a of amenities) {
+    counts[a.category] = (counts[a.category] || 0) + 1;
+  }
+
+  const cats = Object.keys(CAT_COLORS).filter(c => (counts[c] || 0) > 0);
+  if (cats.length === 0) {
+    filterEl.style.display = 'none';
+    return;
+  }
+
+  filterEl.innerHTML = cats.map(cat => {
+    const color = CAT_COLORS[cat];
+    const emoji = CAT_EMOJI[cat];
+    const label = CAT_LABELS[cat];
+    const count = counts[cat] || 0;
+    const isActive = activeCatFilters.has(cat);
+    return `
+      <button class="mv-cat-btn ${isActive ? 'active' : ''}" data-cat="${cat}" style="--cf:${color}">
+        ${emoji} ${label} <span class="mv-cat-count">${count}</span>
+      </button>`;
+  }).join('');
+
+  filterEl.addEventListener('click', e => {
+    const btn = e.target.closest('.mv-cat-btn');
+    if (!btn) return;
+    const cat = btn.dataset.cat;
+    const nowActive = !btn.classList.contains('active');
+    btn.classList.toggle('active', nowActive);
+    onToggle(cat, nowActive);
+  });
+}
+
+// ── Buyer intelligence ──────────────────────────────────────────────────────────
+
+function _wireBuyerPrefs(container, result) {
+  const prefsEl = container.querySelector('#mv-buyer-prefs');
+  if (!prefsEl) return;
+
+  prefsEl.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = [...prefsEl.querySelectorAll('input[type=checkbox]:checked')]
+        .map(i => i.dataset.pref);
+      _renderMatchScore(container.querySelector('#mv-match-score'), result, checked);
+    });
+  });
+}
+
+/**
+ * Calculate how many must-have preferences are satisfied.
+ */
+function _calcMatchScore(result, checkedPrefIds) {
+  const cats = result.score?.categories || {};
+  const amenities = result.amenities || [];
+  let matched = 0;
+  const total = checkedPrefIds.length;
+
+  for (const prefId of checkedPrefIds) {
+    const pref = BUYER_PREFS.find(p => p.id === prefId);
+    if (!pref) continue;
+
+    // Check closest in score.categories first
+    const catData = cats[pref.cat];
+    if (catData?.closest?.distance_meters != null &&
+        catData.closest.distance_meters <= pref.threshold) {
+      matched++;
+      continue;
+    }
+
+    // Fall back to amenities array
+    const nearest = amenities
+      .filter(a => a.category === pref.cat)
+      .sort((a, b) => a.distance_meters - b.distance_meters)[0];
+    if (nearest && nearest.distance_meters <= pref.threshold) {
+      matched++;
+    }
+  }
+
+  return { matched, total, pct: total > 0 ? Math.round((matched / total) * 100) : 0 };
+}
+
+function _renderMatchScore(matchEl, result, checkedPrefIds) {
+  if (!matchEl) return;
+  if (checkedPrefIds.length === 0) {
+    matchEl.textContent = '';
+    return;
+  }
+  const { matched, total, pct } = _calcMatchScore(result, checkedPrefIds);
+  const icon = pct >= 80 ? '✅' : pct >= 50 ? '⚠️' : '❌';
+  matchEl.textContent = `${icon} ${matched}/${total} must-haves matched (${pct}%)`;
+  matchEl.style.color = pct >= 80 ? '#22C55E' : pct >= 50 ? '#F59E0B' : '#EF4444';
 }
 
 // ── MapLibre implementation ─────────────────────────────────────────────────────
 
 function _initMapLibre(lat, lng) {
-  // Tell MapLibre where to find its worker (required for MV3 extension)
   if (chrome?.runtime?.getURL) {
     maplibregl.workerUrl = chrome.runtime.getURL('lib/maplibre-gl.js');
   }
-
   return new maplibregl.Map({
     container: 'mv-map',
     style: 'https://tiles.openfreemap.org/styles/liberty',
@@ -194,7 +445,6 @@ function _placeHomeMarkerMapLibre(map, lat, lng) {
   el.className = 'mv-home-pin';
   el.innerHTML = '🏠';
   el.title = 'Your property';
-
   new maplibregl.Marker({ element: el, anchor: 'bottom' })
     .setLngLat([lng, lat])
     .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML('<b>Your Property</b>'))
@@ -204,19 +454,12 @@ function _placeHomeMarkerMapLibre(map, lat, lng) {
 function _placeAmenityMarkersMapLibre(map, result, homeLat, homeLng) {
   const amenities = (result.amenities || []).filter(a => a.lat && a.lng);
   return amenities.map(amenity => {
-    const color = CAT_COLORS[amenity.category] || '#888';
-    const emoji = CAT_EMOJI[amenity.category] || '📍';
+    const el = createMarkerEl(amenity.category, amenity.name || amenity.type);
 
-    const el = document.createElement('div');
-    el.className = 'mv-amenity-pin';
-    el.style.setProperty('--pin-color', color);
-    el.innerHTML = `<span class="mv-pin-dot" style="background:${color}"></span>`;
-    el.title = amenity.name || amenity.type;
+    const popup = new maplibregl.Popup({ offset: [0, -30], closeButton: false, maxWidth: '260px' })
+      .setHTML(buildPopupHTML(amenity));
 
-    const popup = new maplibregl.Popup({ offset: 15, closeButton: false })
-      .setHTML(`<b>${amenity.name || amenity.type}</b><br>${amenity.distance_meters}m · ${amenity.walking_minutes} min walk`);
-
-    const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
       .setLngLat([amenity.lng, amenity.lat])
       .setPopup(popup)
       .addTo(map);
@@ -229,33 +472,22 @@ function _placeAmenityMarkersMapLibre(map, result, homeLat, homeLng) {
 
 function _drawRadiusMapLibre(map, lat, lng, radiusMeters) {
   const geojson = _circleGeoJSON(lat, lng, radiusMeters);
-
   if (map.getSource('mv-radius')) {
     map.getSource('mv-radius').setData(geojson);
     return;
   }
-
   map.addSource('mv-radius', { type: 'geojson', data: geojson });
-
   map.addLayer({
     id: 'mv-radius-fill',
     type: 'fill',
     source: 'mv-radius',
-    paint: {
-      'fill-color': '#6C63FF',
-      'fill-opacity': 0.08,
-    },
+    paint: { 'fill-color': '#6C63FF', 'fill-opacity': 0.08 },
   });
-
   map.addLayer({
     id: 'mv-radius-border',
     type: 'line',
     source: 'mv-radius',
-    paint: {
-      'line-color': '#6C63FF',
-      'line-width': 1.5,
-      'line-opacity': 0.5,
-    },
+    paint: { 'line-color': '#6C63FF', 'line-width': 1.5, 'line-opacity': 0.5 },
   });
 }
 
@@ -263,7 +495,6 @@ function _updateRadiusMapLibre(map, lat, lng, radiusMeters) {
   if (map.getSource('mv-radius')) {
     map.getSource('mv-radius').setData(_circleGeoJSON(lat, lng, radiusMeters));
   } else {
-    // Map might still be loading; wait and retry
     map.once('idle', () => _drawRadiusMapLibre(map, lat, lng, radiusMeters));
   }
 }
@@ -276,10 +507,7 @@ function _circleGeoJSON(lat, lng, radiusMeters) {
     const dLng = (radiusMeters / (111320 * Math.cos(lat * Math.PI / 180))) * Math.sin(angle);
     coords.push([lng + dLng, lat + dLat]);
   }
-  return {
-    type: 'Feature',
-    geometry: { type: 'Polygon', coordinates: [coords] },
-  };
+  return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] } };
 }
 
 // ── Leaflet implementation ──────────────────────────────────────────────────────
@@ -308,7 +536,7 @@ function _placeHomeMarkerLeaflet(map, lat, lng) {
 function _placeAmenityMarkersLeaflet(map, result, homeLat, homeLng) {
   const amenities = (result.amenities || []).filter(a => a.lat && a.lng);
   return amenities.map(amenity => {
-    const color = CAT_COLORS[amenity.category] || '#888888';
+    const color = CAT_COLORS[amenity.category] || '#888';
     const marker = L.circleMarker([amenity.lat, amenity.lng], {
       radius: 7,
       fillColor: color,
@@ -317,7 +545,7 @@ function _placeAmenityMarkersLeaflet(map, result, homeLat, homeLng) {
       opacity: 0.9,
       fillOpacity: 0.85,
     }).addTo(map)
-      .bindPopup(`<b>${amenity.name || amenity.type}</b><br>${amenity.distance_meters}m · ${amenity.walking_minutes} min walk`);
+      .bindPopup(buildPopupHTML(amenity));
 
     return { markerObj: marker, amenity, isLeaflet: true };
   });
@@ -334,45 +562,44 @@ function _drawRadiusLeaflet(map, lat, lng, radiusMeters) {
   }).addTo(map);
 }
 
-// ── Shared helpers ──────────────────────────────────────────────────────────────
+// ── Shared: filter markers ──────────────────────────────────────────────────────
 
-function _applyModeFilter(allMarkers, mode, isLeaflet) {
-  const allowed = MODES[mode] || MODES.all;
-  for (const { markerObj, amenity, element } of allMarkers) {
-    const visible = allowed.includes(amenity.category);
-    if (isLeaflet) {
-      const el = markerObj.getElement?.();
-      if (visible) {
-        markerObj.setStyle({ opacity: 0.9, fillOpacity: 0.85 });
-      } else {
-        markerObj.setStyle({ opacity: 0, fillOpacity: 0 });
-      }
+/**
+ * Apply mode + category filter toggles to markers.
+ * A marker is visible if its category is in the mode's allowed list
+ * AND is toggled on in the cat filter.
+ */
+function _applyFilters(allMarkers, mode, activeCatFilters, leaflet) {
+  const modeAllowed = MODES[mode] || MODES.all;
+  for (const { markerObj, amenity } of allMarkers) {
+    const visible = modeAllowed.includes(amenity.category) && activeCatFilters.has(amenity.category);
+    if (leaflet) {
+      markerObj.setStyle({ opacity: visible ? 0.9 : 0, fillOpacity: visible ? 0.85 : 0 });
     } else {
-      // MapLibre custom HTML marker
       const el = markerObj.getElement();
-      el.style.display = visible ? '' : 'none';
+      if (el) el.style.display = visible ? '' : 'none';
     }
   }
 }
 
 // ── Property Intelligence panel ─────────────────────────────────────────────────
 
-function _renderIntel(intelEl, result, radiusMeters) {
+function _renderIntel(intelEl, result, radiusMeters, mergedAmenities) {
   if (!intelEl) return;
-  intelEl.innerHTML = _buildIntelPanel(result, radiusMeters);
+  intelEl.innerHTML = _buildIntelPanel(result, radiusMeters, mergedAmenities);
 }
 
-function _buildIntelPanel(result, radiusMeters) {
-  const amenities = result.amenities || [];
-  const cats      = result.score?.categories || {};
+function _buildIntelPanel(result, radiusMeters, mergedAmenities) {
+  const backendAmenities = result.amenities || [];
+  const allAmenities     = (mergedAmenities && mergedAmenities.length > 0) ? mergedAmenities : backendAmenities;
+  const cats             = result.score?.categories || {};
 
-  // Count amenities within selected radius
-  const inRadius = amenities.filter(a => a.distance_meters <= radiusMeters);
+  const inRadius = allAmenities.filter(a => a.distance_meters <= radiusMeters);
   const radiusLabel = radiusMeters >= 1000
     ? `${(radiusMeters / 1000).toFixed(radiusMeters % 1000 === 0 ? 0 : 1)} km`
     : `${radiusMeters}m`;
 
-  // Build key category cards
+  // Key category cards
   const cards = KEY_CATS.map(({ id, emoji, label }) => {
     const cat     = cats[id];
     const closest = cat?.closest;
@@ -405,10 +632,24 @@ function _buildIntelPanel(result, radiusMeters) {
       <div class="mv-intel-card-value" style="color:var(--accent2)">${inRadius.length} places</div>
     </div>`;
 
+  // Per-category counts
+  const catCounts = {};
+  for (const a of inRadius) {
+    catCounts[a.category] = (catCounts[a.category] || 0) + 1;
+  }
+  const catCountsHTML = Object.entries(catCounts).length > 0 ? `
+    <div class="mv-intel-cats">
+      ${Object.entries(catCounts).map(([catId, count]) => `
+        <div class="mv-intel-cat-item" style="--cc:${CAT_COLORS[catId] || '#888'}">
+          <span>${CAT_EMOJI[catId] || '📍'} ${CAT_LABELS[catId] || catId}</span>
+          <b style="color:${CAT_COLORS[catId] || '#888'}">${count} within ${radiusLabel}</b>
+        </div>`).join('')}
+    </div>` : '';
+
   return `
     <div class="mv-intel-grid">
       ${cards.join('')}
       ${radiusCard}
     </div>
-  `;
+    ${catCountsHTML}`;
 }

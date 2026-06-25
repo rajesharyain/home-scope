@@ -1796,3 +1796,249 @@ html, body {
 .leaflet-control-attribution a {
   color: rgba(255,255,255,0.6) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   NEW PHASE ADDITIONS — appended only, never touching rules above
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Phase 1: Enhanced SVG markers ───────────────────────────────────────────── */
+.mv-marker { position: relative; cursor: pointer; width: 32px; height: 42px; }
+.mv-marker-bubble {
+  width: 32px; height: 32px;
+  border-radius: 50% 50% 50% 0;
+  background: var(--mc, #888);
+  transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+  transition: transform 0.15s;
+}
+.mv-marker:hover .mv-marker-bubble { transform: rotate(-45deg) scale(1.12); }
+.mv-marker-bubble svg { width: 16px; height: 16px; transform: rotate(45deg); }
+.mv-marker-tail {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--mc, #888);
+  margin: -2px auto 0;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+}
+
+/* MapLibre popup — dark theme overrides (take priority via specificity) */
+.maplibregl-popup-content {
+  background: #1a2642 !important;
+  color: #e2e8f0 !important;
+  border: 1px solid #1a2845 !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  font-family: system-ui !important;
+}
+.maplibregl-popup-tip { border-top-color: #1a2642 !important; }
+
+/* Rich popup card */
+.mv-popup { padding: 12px; min-width: 180px; max-width: 240px; }
+.mv-popup-header {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin-bottom: 8px; padding-left: 0;
+}
+.mv-popup-emoji { font-size: 20px; flex-shrink: 0; }
+.mv-popup-name { font-size: 13px; font-weight: 600; }
+.mv-popup-cat {
+  font-size: 10px; color: rgba(255,255,255,0.5);
+  text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px;
+}
+.mv-popup-stats {
+  display: flex; gap: 10px;
+  font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 6px;
+}
+.mv-popup-hours { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.mv-popup-link { font-size: 11px; color: #6C63FF; text-decoration: none; display: block; margin-top: 5px; }
+.mv-popup-link:hover { text-decoration: underline; }
+
+/* Category filter bar */
+.mv-cat-filters {
+  display: flex; gap: 4px; overflow-x: auto; padding: 6px 10px;
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.mv-cat-filters::-webkit-scrollbar { display: none; }
+.mv-cat-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 20px; font-size: 11px; font-weight: 600;
+  color: var(--text3); background: var(--surface);
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.mv-cat-btn.active {
+  border-color: var(--cf);
+  color: var(--cf);
+  background: color-mix(in srgb, var(--cf) 12%, transparent);
+}
+.mv-cat-count { font-size: 10px; opacity: 0.7; }
+
+/* Loading overlay */
+.mv-loading {
+  position: absolute; inset: 0;
+  background: rgba(6,11,20,0.6);
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 0; z-index: 10; pointer-events: none;
+}
+.mv-spinner {
+  width: 24px; height: 24px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #6C63FF;
+  border-radius: 50%;
+  animation: mv-spin 0.7s linear infinite;
+}
+@keyframes mv-spin { to { transform: rotate(360deg); } }
+
+/* Mode description */
+.mv-mode-desc {
+  font-size: 10px; color: var(--text3);
+  padding: 3px 12px 2px; letter-spacing: 0.1px;
+  flex-shrink: 0; border-bottom: 1px solid var(--border);
+}
+
+/* Intel category list */
+.mv-intel-cats { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+.mv-intel-cat-item {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text2);
+  padding: 5px 0; border-bottom: 1px solid var(--border);
+}
+.mv-intel-cat-item:last-child { border-bottom: none; }
+
+/* ── Phase 2: DNA Score Cards (expandable) ───────────────────────────────────── */
+.dna-exp-section { padding-bottom: 12px; }
+.dna-exp-card {
+  border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden; margin-bottom: 6px;
+}
+.dna-exp-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer;
+  transition: background 0.15s;
+}
+.dna-exp-header:hover { background: var(--surface2); }
+.dna-exp-emoji { font-size: 16px; flex-shrink: 0; }
+.dna-exp-name { font-size: 13px; font-weight: 600; flex-shrink: 0; width: 70px; }
+.dna-exp-bar-wrap {
+  flex: 1; height: 6px; background: var(--border);
+  border-radius: 3px; overflow: hidden;
+}
+.dna-exp-bar { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+.dna-exp-score {
+  font-size: 13px; font-weight: 700;
+  width: 28px; text-align: right; flex-shrink: 0;
+}
+.dna-exp-toggle {
+  background: none; border: none; color: var(--text3);
+  font-size: 18px; cursor: pointer;
+  transition: transform 0.2s; padding: 0; width: 20px; flex-shrink: 0;
+}
+.dna-exp-card.open .dna-exp-toggle { transform: rotate(90deg); }
+.dna-exp-body { padding: 0 12px 10px; border-top: 1px solid var(--border); }
+.dna-exp-poi {
+  display: flex; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid var(--border); gap: 8px;
+}
+.dna-exp-poi:last-child { border-bottom: none; }
+.dna-exp-poi-name {
+  flex: 1; font-size: 12px; color: var(--text2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dna-exp-poi-dist { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.dna-exp-poi-walk { font-size: 10px; color: var(--text3); flex-shrink: 0; }
+.dna-exp-none { font-size: 12px; color: var(--text3); padding: 8px 0; }
+
+/* ── Phase 3: Neighborhood Explorer ─────────────────────────────────────────── */
+.ne-screen { padding: 12px; }
+.ne-cat-section { margin-bottom: 16px; }
+.ne-cat-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+.ne-cat-emoji { font-size: 16px; }
+.ne-cat-name {
+  font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text3); flex: 1;
+}
+.ne-cat-count { font-size: 11px; color: var(--text3); }
+.ne-poi-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ne-poi-item:last-child { border-bottom: none; }
+.ne-poi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.ne-poi-name {
+  flex: 1; font-size: 13px; font-weight: 500;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ne-poi-dist { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.ne-poi-walk { font-size: 10px; color: var(--text3); flex-shrink: 0; width: 42px; text-align: right; }
+
+/* ── Phase 5: Property Compare ───────────────────────────────────────────────── */
+.pc-screen {
+  padding: 16px; height: 100%;
+  display: flex; flex-direction: column;
+}
+.pc-empty { text-align: center; padding: 40px 20px; }
+.pc-empty-icon { font-size: 36px; margin-bottom: 12px; }
+.pc-empty-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.pc-empty-desc {
+  font-size: 12px; color: var(--text3);
+  line-height: 1.6; margin-bottom: 20px;
+}
+.pc-table { flex: 1; overflow-y: auto; }
+.pc-header {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.pc-col-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.6px; color: var(--text3);
+}
+.pc-col-a { font-size: 11px; font-weight: 600; color: #3B82F6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-col-b { font-size: 11px; font-weight: 600; color: #F59E0B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; padding: 7px 0;
+  border-bottom: 1px solid var(--border); align-items: center;
+}
+.pc-row-label { font-size: 11px; color: var(--text3); }
+.pc-val { font-size: 13px; font-weight: 700; }
+.pc-val.better { color: #10B981; }
+.pc-val.worse  { color: #EF4444; }
+.pc-clear-btn {
+  font-size: 11px; color: var(--text3); background: none;
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; flex-shrink: 0;
+}
+.pc-clear-btn:hover { color: var(--error); border-color: var(--error); }
+
+/* ── Phase 6: Buyer Intelligence ─────────────────────────────────────────────── */
+.mv-buyer-prefs {
+  padding: 12px; border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.mv-section-label {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.mv-pref-row { display: flex; flex-direction: column; gap: 7px; margin: 6px 0; }
+.mv-pref-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+}
+.mv-pref-toggle input[type=checkbox] {
+  accent-color: #6C63FF; width: 14px; height: 14px; flex-shrink: 0;
+}
+.mv-match-score {
+  margin-top: 10px; padding: 10px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; font-size: 13px; font-weight: 600;
+  text-align: center; min-height: 38px;
+  display: flex; align-items: center; justify-content: center;
+}
+

@@ -9,14 +9,18 @@ import { renderAiStory } from '../widgets/ai_story.js';
 import { renderFutureScore } from '../widgets/future_score.js';
 import { renderLifeRadius } from '../widgets/life_radius.js';
 import { renderMapView } from '../widgets/map_view.js';
+import { renderNeighborhoodExplorer } from '../widgets/neighborhood_explorer.js';
+import { renderPropertyCompare } from '../widgets/property_compare.js';
 
 const TABS = [
   { id: 'map',          label: 'Map',     emoji: '🗺' },
+  { id: 'explore',      label: 'Explore', emoji: '🔍' },
   { id: 'dna',          label: 'DNA',     emoji: '🧬' },
   { id: 'life-radius',  label: 'Radius',  emoji: '📍' },
   { id: 'time-machine', label: 'Time',    emoji: '🕐' },
   { id: 'ai-story',     label: 'Story',   emoji: '✨' },
   { id: 'future-score', label: 'Future',  emoji: '🔮' },
+  { id: 'compare',      label: 'Compare', emoji: '⚖️' },
 ];
 
 export function renderNeighborhood(container, result) {
@@ -61,11 +65,13 @@ function renderTab(tabId, content, result) {
 
   switch (tabId) {
     case 'map':          renderMapView(content, result);               break;
-    case 'dna':          renderDNA(content, result);                    break;
+    case 'explore':      renderNeighborhoodExplorer(content, result);  break;
+    case 'dna':          renderDNA(content, result);                   break;
     case 'life-radius':  renderLifeRadius(content, result);            break;
     case 'time-machine': renderTimeMachine(content, result.score);     break;
     case 'ai-story':     renderAiStory(content, result);               break;
     case 'future-score': renderFutureScore(content, result.score);     break;
+    case 'compare':      renderPropertyCompare(content, result);       break;
   }
 }
 
@@ -124,6 +130,89 @@ function renderDNA(content, result) {
     const canvas = content.querySelector('#radar-canvas');
     if (canvas) renderRadarChart(canvas, cats);
   });
+
+  // Append DNA explained section
+  _renderDNAExplained(content.querySelector('.dna-screen'), result);
+}
+
+// ── DNA Explained: expandable score cards ──────────────────────────────────────
+
+function _renderDNAExplained(container, result) {
+  if (!container) return;
+  const cats      = result.score?.categories || {};
+  const amenities = result.amenities || [];
+
+  if (Object.keys(cats).length === 0) return;
+
+  const CAT_EMOJI_MAP = {
+    transportation: '🚇', education: '🎓', healthcare: '🏥',
+    shopping: '🛍', safety: '🛡', religion: '⛪', recreation: '🌳',
+  };
+  const CAT_LABELS_MAP = {
+    transportation: 'Transit', education: 'Schools', healthcare: 'Health',
+    shopping: 'Shopping', safety: 'Safety', religion: 'Community', recreation: 'Parks',
+  };
+
+  const html = Object.entries(cats).map(([catId, cat]) => {
+    const color  = getCatColor(catId);
+    const emoji  = CAT_EMOJI_MAP[catId] || '📍';
+    const label  = CAT_LABELS_MAP[catId] || cat.label || catId;
+    const score  = cat.score ?? 0;
+
+    const nearby = amenities
+      .filter(a => a.category === catId)
+      .sort((a, b) => a.distance_meters - b.distance_meters)
+      .slice(0, 3);
+
+    const poisHTML = nearby.length ? nearby.map(a => `
+      <div class="dna-exp-poi">
+        <span class="dna-exp-poi-name">${_escDNA(a.name || a.type || 'Place')}</span>
+        <span class="dna-exp-poi-dist" style="color:${color}">${a.distance_meters}m</span>
+        <span class="dna-exp-poi-walk">${a.walking_minutes != null ? a.walking_minutes + ' min' : '—'}</span>
+      </div>`).join('')
+      : '<div class="dna-exp-none">No nearby data available</div>';
+
+    return `
+      <div class="dna-exp-card" data-cat="${catId}">
+        <div class="dna-exp-header">
+          <span class="dna-exp-emoji">${emoji}</span>
+          <span class="dna-exp-name">${label}</span>
+          <div class="dna-exp-bar-wrap">
+            <div class="dna-exp-bar" style="width:${score}%;background:${color}"></div>
+          </div>
+          <span class="dna-exp-score" style="color:${color}">${Math.round(score)}</span>
+          <button class="dna-exp-toggle" aria-label="Toggle details">›</button>
+        </div>
+        <div class="dna-exp-body" style="display:none">
+          ${poisHTML}
+        </div>
+      </div>`;
+  }).join('');
+
+  const section = document.createElement('div');
+  section.className = 'dna-exp-section';
+  section.innerHTML = `
+    <div class="section-label" style="color:rgba(255,255,255,0.5);margin-top:16px;margin-bottom:8px">SCORE BREAKDOWN</div>
+    ${html}`;
+  container.appendChild(section);
+
+  // Wire accordion toggle
+  section.querySelectorAll('.dna-exp-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const card = header.closest('.dna-exp-card');
+      const body = card.querySelector('.dna-exp-body');
+      const isOpen = card.classList.toggle('open');
+      body.style.display = isOpen ? 'block' : 'none';
+    });
+  });
+}
+
+function _escDNA(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // Inline color lookup to avoid circular import in template literal
