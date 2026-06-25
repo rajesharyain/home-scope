@@ -2042,3 +2042,171 @@ html, body {
   display: flex; align-items: center; justify-content: center;
 }
 
+/* ── Neighborhood Timeline ────────────────────────────────────────────────── */
+.nt-screen { display: flex; flex-direction: column; height: 100%; }
+
+/* Theme selector strip */
+.nt-themes {
+  display: flex; gap: 6px; padding: 10px 12px 8px;
+  overflow-x: auto; flex-shrink: 0;
+  scrollbar-width: none;
+}
+.nt-themes::-webkit-scrollbar { display: none; }
+
+.nt-theme-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 6px 10px; border-radius: 10px; border: 1.5px solid transparent;
+  background: var(--surface2); cursor: pointer; flex-shrink: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+.nt-theme-btn.active {
+  border-color: var(--tc, #6C63FF);
+  background: color-mix(in srgb, var(--tc, #6C63FF) 15%, var(--surface2));
+}
+.nt-theme-emoji { font-size: 16px; line-height: 1; }
+.nt-theme-label { font-size: 10px; font-weight: 600; color: var(--text2); }
+.nt-theme-btn.active .nt-theme-label { color: var(--tc, #6C63FF); }
+
+/* Panel fade transition */
+.nt-panel {
+  flex: 1; overflow-y: auto; padding: 0 12px 12px;
+  transition: opacity 0.12s ease;
+}
+.nt-panel--fade { opacity: 0; }
+
+/* Hero */
+.nt-hero {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px; border-radius: 10px; margin-bottom: 10px;
+  background: color-mix(in srgb, var(--tc, #6C63FF) 12%, var(--surface2));
+  border: 1px solid color-mix(in srgb, var(--tc, #6C63FF) 30%, transparent);
+}
+.nt-hero-left { display: flex; align-items: center; gap: 10px; }
+.nt-hero-emoji { font-size: 28px; line-height: 1; }
+.nt-hero-label { font-size: 15px; font-weight: 700; }
+.nt-hero-tagline { font-size: 11px; color: var(--text2); }
+.nt-hero-right { text-align: right; }
+.nt-hero-count { font-size: 26px; font-weight: 800; color: var(--tc, #6C63FF); line-height: 1; }
+.nt-hero-count-sub { font-size: 10px; color: var(--text3); font-weight: 600; letter-spacing: 0.5px; }
+
+/* Score bar */
+.nt-score-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.nt-score-track {
+  flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden;
+}
+.nt-score-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nt-score-val {
+  font-size: 15px; font-weight: 800; min-width: 28px; text-align: right;
+}
+
+/* Insight strip */
+.nt-insight {
+  font-size: 12px; color: var(--text2); line-height: 1.5;
+  padding: 8px 10px; border-radius: 0 6px 6px 0;
+  background: var(--surface2); margin-bottom: 12px;
+}
+
+/* Nearest highlight card */
+.nt-nearest {
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 10px;
+  background: color-mix(in srgb, var(--tc, #6C63FF) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--tc, #6C63FF) 25%, transparent);
+}
+.nt-nearest-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--tc, #6C63FF); margin-bottom: 3px;
+}
+.nt-nearest-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.nt-nearest-meta { display: flex; gap: 6px; font-size: 12px; color: var(--text2); }
+
+/* Places list */
+.nt-places-header {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--text3); margin-bottom: 6px;
+}
+.nt-place {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.nt-place--first { border-top: none; }
+.nt-place-rank {
+  font-size: 12px; font-weight: 800; min-width: 18px; text-align: center;
+}
+.nt-place-body { flex: 1; min-width: 0; }
+.nt-place-name {
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nt-place-type { font-size: 11px; color: var(--text3); }
+.nt-place-meta { text-align: right; flex-shrink: 0; }
+.nt-place-dist { display: block; font-size: 12px; font-weight: 700; }
+.nt-place-walk { display: block; font-size: 11px; color: var(--text3); }
+
+.nt-places-more {
+  text-align: center; font-size: 11px; color: var(--text3);
+  padding: 8px 0 4px;
+}
+
+/* Empty state */
+.nt-empty {
+  text-align: center; padding: 32px 16px;
+}
+.nt-empty-icon { font-size: 36px; margin-bottom: 10px; }
+.nt-empty-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.nt-empty-sub { font-size: 12px; color: var(--text3); }
+
+/* Investment panel */
+.nt-inv-verdict {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px; border-radius: 10px; border: 2px solid;
+  background: var(--surface2); margin-bottom: 14px;
+}
+.nt-inv-verdict-score {
+  font-size: 36px; font-weight: 900; line-height: 1; flex-shrink: 0;
+}
+.nt-inv-verdict-label { font-size: 14px; font-weight: 700; }
+.nt-inv-verdict-sub { font-size: 11px; color: var(--text3); }
+
+.nt-inv-section-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  color: var(--text3); margin-bottom: 10px;
+}
+
+.nt-inv-driver {
+  background: var(--surface2); border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 8px;
+}
+.nt-inv-driver-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+}
+.nt-inv-driver-label { font-size: 12px; font-weight: 600; flex: 1; }
+.nt-inv-score { font-size: 13px; font-weight: 800; margin-left: auto; }
+
+.nt-inv-bar-track {
+  height: 4px; background: var(--border); border-radius: 2px; overflow: hidden;
+  margin-bottom: 6px;
+}
+.nt-inv-bar-fill { height: 100%; border-radius: 2px; }
+.nt-inv-reason { font-size: 11px; color: var(--text3); line-height: 1.4; }
+
+/* Weight badges */
+.nt-badge {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+  flex-shrink: 0;
+}
+.nt-badge--high { background: rgba(16,185,129,0.15); color: #10B981; }
+.nt-badge--mid  { background: rgba(245,158,11,0.15); color: #F59E0B; }
+.nt-badge--low  { background: rgba(156,163,175,0.12); color: #9CA3AF; }
+
+.nt-inv-disclaimer {
+  font-size: 10px; color: var(--text3); line-height: 1.5;
+  text-align: center; margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+

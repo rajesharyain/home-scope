@@ -11,16 +11,18 @@ import { renderLifeRadius } from '../widgets/life_radius.js';
 import { renderMapView } from '../widgets/map_view.js';
 import { renderNeighborhoodExplorer } from '../widgets/neighborhood_explorer.js';
 import { renderPropertyCompare } from '../widgets/property_compare.js';
+import { renderNeighborhoodTimeline } from '../widgets/neighborhood_timeline.js';
 
 const TABS = [
-  { id: 'map',          label: 'Map',     emoji: '🗺' },
-  { id: 'explore',      label: 'Explore', emoji: '🔍' },
-  { id: 'dna',          label: 'DNA',     emoji: '🧬' },
-  { id: 'life-radius',  label: 'Radius',  emoji: '📍' },
-  { id: 'time-machine', label: 'Time',    emoji: '🕐' },
-  { id: 'ai-story',     label: 'Story',   emoji: '✨' },
-  { id: 'future-score', label: 'Future',  emoji: '🔮' },
-  { id: 'compare',      label: 'Compare', emoji: '⚖️' },
+  { id: 'map',          label: 'Map',      emoji: '🗺' },
+  { id: 'explore',      label: 'Explore',  emoji: '🔍' },
+  { id: 'dna',          label: 'DNA',      emoji: '🧬' },
+  { id: 'timeline',     label: 'Timeline', emoji: '⏱' },
+  { id: 'life-radius',  label: 'Radius',   emoji: '📍' },
+  { id: 'time-machine', label: 'Time',     emoji: '🕐' },
+  { id: 'ai-story',     label: 'Story',    emoji: '✨' },
+  { id: 'future-score', label: 'Future',   emoji: '🔮' },
+  { id: 'compare',      label: 'Compare',  emoji: '⚖️' },
 ];
 
 export function renderNeighborhood(container, result) {
@@ -71,6 +73,7 @@ function renderTab(tabId, content, result) {
     case 'time-machine': renderTimeMachine(content, result.score);     break;
     case 'ai-story':     renderAiStory(content, result);               break;
     case 'future-score': renderFutureScore(content, result.score);     break;
+    case 'timeline':     renderNeighborhoodTimeline(content, result);  break;
     case 'compare':      renderPropertyCompare(content, result);       break;
   }
 }
