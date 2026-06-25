@@ -27,6 +27,6 @@
   "permissions": ["storage", "tabs", "alarms", "sidePanel"],
   "host_permissions": ["http://localhost:8000/*", "http://localhost:8001/*"],
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; worker-src blob:;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
 }
