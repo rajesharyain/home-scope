@@ -33,6 +33,26 @@ function homeHTML() {
 
       <!-- Hero -->
       <div class="home-hero">
+        <!-- 7-dimension logo + wordmark -->
+        <div class="home-logo">
+          <svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <path d="M33.413,5.037 A27,27 0 0,1 52.199,14.084 L43.970,21.383 A16,16 0 0,0 32.837,16.022 Z" fill="#3B82F6" opacity="0.92"/>
+            <path d="M53.962,16.294 A27,27 0 0,1 58.601,36.622 L47.764,34.739 A16,16 0 0,0 45.014,22.693 Z" fill="#8B5CF6" opacity="0.92"/>
+            <path d="M57.973,39.377 A27,27 0 0,1 44.972,55.680 L39.687,46.032 A16,16 0 0,0 47.391,36.372 Z" fill="#EF4444" opacity="0.92"/>
+            <path d="M42.426,56.906 A27,27 0 0,1 21.574,56.906 L25.822,46.759 A16,16 0 0,0 38.178,46.759 Z" fill="#F59E0B" opacity="0.92"/>
+            <path d="M19.028,55.680 A27,27 0 0,1 6.027,39.377 L16.609,36.372 A16,16 0 0,0 24.313,46.032 Z" fill="#10B981" opacity="0.92"/>
+            <path d="M5.399,36.622 A27,27 0 0,1 10.038,16.294 L18.986,22.693 A16,16 0 0,0 16.236,34.739 Z" fill="#06B6D4" opacity="0.92"/>
+            <path d="M11.801,14.084 A27,27 0 0,1 30.587,5.037 L31.163,16.022 A16,16 0 0,0 20.030,21.383 Z" fill="#22C55E" opacity="0.92"/>
+            <circle cx="32" cy="32" r="15" fill="#0D1625"/>
+            <polygon points="32,24 25,30 39,30" fill="white" opacity="0.95"/>
+            <rect x="27" y="30" width="10" height="7" fill="white" opacity="0.95"/>
+            <rect x="30" y="33" width="4" height="4" fill="#0D1625"/>
+          </svg>
+          <div class="home-logo-label">
+            <span class="home-logo-name">HomeScope</span>
+            <span class="home-logo-tag">7 Dimensions · AI · Real-time</span>
+          </div>
+        </div>
         <h1 class="home-headline">Understand any<br>address with AI.</h1>
         <p class="home-sub">7 dimensions · AI narrative · Real-time data</p>
       </div>
@@ -152,6 +172,79 @@ function homeHTML() {
               <div class="hm-prop-desc">The Life Radius shows exactly what is within a 5, 10, 20 and 30-minute walk — plotted on a real map.</div>
             </div>
           </div>
+        </div>
+
+        <div class="hm-divider"></div>
+
+        <!-- 7 dimensions -->
+        <div class="hm-headline">The 7 dimensions</div>
+        <p class="hm-sub">Every address is scored across seven aspects of daily life. Together they give you a complete picture — no guesswork.</p>
+
+        <div class="hm-dimensions">
+
+          <div class="hm-dim" style="--dc:#3B82F6">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🚇</span>
+              <span class="hm-dim-name">Transportation</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Bus stops, metro, train and tram lines, cycling paths. A high score means genuine freedom from car dependency.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#8B5CF6">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🎓</span>
+              <span class="hm-dim-name">Education</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Nurseries, primary and secondary schools, universities and libraries. Critical for families — and a proven driver of property values.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#EF4444">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🏥</span>
+              <span class="hm-dim-name">Healthcare</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Hospitals, GP clinics, pharmacies and dentists. Access to care matters most when you need it most — in an emergency.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#F59E0B">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🛍</span>
+              <span class="hm-dim-name">Shopping</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Supermarkets, local markets, convenience stores. The difference between a 5-minute walk and a 20-minute drive for your weekly shop.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#10B981">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🛡</span>
+              <span class="hm-dim-name">Safety</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Police stations, fire services and emergency access. A proxy for response quality and the security infrastructure of the neighbourhood.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#06B6D4">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🤝</span>
+              <span class="hm-dim-name">Community</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Community centres, places of worship, cultural and social spaces. The social fabric that makes a neighbourhood feel alive, not just convenient.</div>
+          </div>
+
+          <div class="hm-dim" style="--dc:#22C55E">
+            <div class="hm-dim-top">
+              <span class="hm-dim-emoji">🌳</span>
+              <span class="hm-dim-name">Recreation</span>
+              <span class="hm-dim-dot"></span>
+            </div>
+            <div class="hm-dim-desc">Parks, sports facilities, gyms and green spaces. Quality of life beyond the front door — space to breathe, move and decompress.</div>
+          </div>
+
         </div>
 
         <div class="hm-divider"></div>
