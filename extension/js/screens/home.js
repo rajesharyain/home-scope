@@ -76,6 +76,91 @@ function homeHTML() {
         <div class="section-label">RECENT</div>
         <div id="history-list" class="history-list"></div>
       </div>
+
+      <!-- Marketing / onboarding section -->
+      <div class="home-marketing">
+
+        <div class="hm-divider"></div>
+
+        <!-- Value props -->
+        <div class="hm-headline">What HomeScope does</div>
+        <p class="hm-sub">Property sites show you the house. We show you the life around it.</p>
+
+        <div class="hm-props">
+          <div class="hm-prop">
+            <span class="hm-prop-icon">📍</span>
+            <div>
+              <div class="hm-prop-title">One search, 7 dimensions</div>
+              <div class="hm-prop-desc">Schools, transit, healthcare, shops, safety, community and parks — all in one place, instantly.</div>
+            </div>
+          </div>
+          <div class="hm-prop">
+            <span class="hm-prop-icon">⚡</span>
+            <div>
+              <div class="hm-prop-title">AI insight in seconds</div>
+              <div class="hm-prop-desc">No more 6-tab research sessions. Get a clear narrative and score for any address in under 20 seconds.</div>
+            </div>
+          </div>
+          <div class="hm-prop">
+            <span class="hm-prop-icon">🎯</span>
+            <div>
+              <div class="hm-prop-title">Personalised to your life</div>
+              <div class="hm-prop-desc">Family, investor, student, professional — your profile re-weights every score around what actually matters to you.</div>
+            </div>
+          </div>
+          <div class="hm-prop">
+            <span class="hm-prop-icon">🗺</span>
+            <div>
+              <div class="hm-prop-title">Walk-time radar, not vague ratings</div>
+              <div class="hm-prop-desc">The Life Radius shows exactly what is within a 5, 10, 20 and 30-minute walk — plotted on a real map.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="hm-divider"></div>
+
+        <!-- FAQ accordion -->
+        <div class="hm-headline">Common questions</div>
+        <div class="hm-faq" id="hm-faq">
+
+          <div class="faq-item">
+            <button class="faq-q">Who is HomeScope for?</button>
+            <div class="faq-a">Anyone making a location decision. Families checking school proximity. Professionals weighing up commute time. Investors sizing up rental potential. Retirees finding somewhere walkable. The profile selector adapts the score to your specific situation.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">How does the score work?</button>
+            <div class="faq-a">We analyse 7 dimensions — transportation, education, healthcare, shopping, safety, community and recreation. Each is scored 0–100 based on what is physically nearby. Your chosen profile then applies weights (a family weights schools heavily; an investor weights transport and commerce). The overall score is the weighted average.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">How accurate is the data?</button>
+            <div class="faq-a">Location data comes from OpenStreetMap — a global, continuously updated database with over 8 billion data points. It reflects what is physically on the ground right now, often more up-to-date than commercial alternatives.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">Can I use this for investment decisions?</button>
+            <div class="faq-a">Yes. The Investor profile weights transport links, commercial access and future trajectory. The Life Radius and Within Reach stats give you a clear picture of walkable amenity density — a key driver of rental demand and resale value.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">What does the Life Radius show?</button>
+            <div class="faq-a">A circular radar centred on the address. Each ring represents a walk time — 5, 10, 20 and 30 minutes. Coloured dots show every nearby amenity. Tap any dot for its name and walking time. Filter by category to focus on what matters to you.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">Which countries are supported?</button>
+            <div class="faq-a">Currently Portugal, Spain, United Kingdom, France and Germany. Coverage follows OpenStreetMap data quality — these markets have the most complete datasets. More countries are being added.</div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-q">Is my data private?</button>
+            <div class="faq-a">Addresses you search are sent to the HomeScope API to retrieve location data. Search history is stored locally in your browser only and never uploaded. No personal information is collected or shared.</div>
+          </div>
+
+        </div>
+      </div>
+
     </div>
   `;
 }
@@ -107,6 +192,17 @@ function bindHome(container) {
       profileChips.forEach(c => c.classList.remove('active'));
       chip.classList.add('active');
     });
+  });
+
+  // FAQ accordion
+  container.querySelector('#hm-faq')?.addEventListener('click', e => {
+    const btn = e.target.closest('.faq-q');
+    if (!btn) return;
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    // close all
+    container.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
   });
 
   addressInput.addEventListener('input', () => {
