@@ -438,7 +438,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
           slivers: [
             SliverToBoxAdapter(child: _buildHandle()),
             SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildScoreOverview()),
+            SliverToBoxAdapter(child: _buildSubtypeCounts()),
             if (widget.cat.id == 'transportation')
               SliverToBoxAdapter(child: _buildTransportDNA()),
             SliverToBoxAdapter(child: _buildBreakdown()),
@@ -631,6 +631,63 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
   }
 
   // ── Transit radar (transportation only) ──────────────────────────────────────
+
+  // ── Subtype count cards (replaces sparkline) ─────────────────────────────────
+
+  Widget _buildSubtypeCounts() {
+    if (_subtypes.isEmpty) return const SizedBox.shrink();
+    final isTransport = widget.cat.id == 'transportation';
+
+    return _Section(
+      title: 'AT A GLANCE',
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _subtypes.map((st) {
+          final stColor = isTransport
+              ? (_kTransportColors[st.type] ?? _color)
+              : _color;
+          final icon  = _subTypeIcon[st.type] ?? _catIcon[widget.cat.id] ?? Icons.place_rounded;
+          final label = (_subTypeLabel[st.type] ?? _prettify(st.type))
+              .split(' ').first; // first word keeps chips compact
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: stColor.withOpacity(0.30)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: stColor, size: 20),
+                const SizedBox(height: 6),
+                Text(
+                  '${st.count}',
+                  style: TextStyle(
+                    color: stColor,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.42),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    ).animate(delay: 80.ms).fadeIn(duration: 300.ms);
+  }
 
   Widget _buildTransportDNA() {
     final subTypes = _subtypes.take(7).toList();
@@ -910,6 +967,15 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.homescope.app',
               ),
+              // Dotted lines from home to each amenity
+              PolylineLayer(polylines: [
+                ...markers.map((a) => Polyline(
+                  points: [LatLng(lat, lng), LatLng(a.lat, a.lng)],
+                  color: color.withOpacity(0.45),
+                  strokeWidth: 1.5,
+                  isDotted: true,
+                )),
+              ]),
               CircleLayer(circles: [
                 CircleMarker(
                   point: LatLng(lat, lng),
