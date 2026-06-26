@@ -156,32 +156,32 @@ class _NeighborhoodTimelineWidgetState
 
     return Container(
       color: _kBg,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(0, widget.topPadding, 0, 40),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Section 1: Score Journey ──────────────────────────────────
-            _SectionLabel('SCORE JOURNEY'),
-            _ScoreJourneyCard(
-              yearlyScores: _yearlyScores,
-              years: _years,
-              gainPts: gainPts,
-            ),
+      padding: EdgeInsets.only(top: widget.topPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Section 1: Score Journey ──────────────────────────────────
+          _SectionLabel('SCORE JOURNEY'),
+          _ScoreJourneyCard(
+            yearlyScores: _yearlyScores,
+            years: _years,
+            gainPts: gainPts,
+          ),
 
-            const SizedBox(height: 28),
+          const SizedBox(height: 28),
 
-            // ── Section 2: Category Evolution ─────────────────────────────
-            _SectionLabel('CATEGORY EVOLUTION'),
-            _CategoryEvolutionCard(topCats: _topCats),
+          // ── Section 2: Category Evolution ─────────────────────────────
+          _SectionLabel('CATEGORY EVOLUTION'),
+          _CategoryEvolutionCard(topCats: _topCats),
 
-            const SizedBox(height: 28),
+          const SizedBox(height: 28),
 
-            // ── Section 3: Key Milestones ─────────────────────────────────
-            _SectionLabel('KEY MILESTONES'),
-            _MilestonesCard(milestones: _milestones),
-          ],
-        ),
+          // ── Section 3: Key Milestones ─────────────────────────────────
+          _SectionLabel('KEY MILESTONES'),
+          _MilestonesCard(milestones: _milestones),
+
+          const SizedBox(height: 28),
+        ],
       ),
     );
   }

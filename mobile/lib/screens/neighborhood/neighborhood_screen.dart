@@ -11,6 +11,7 @@ import '../../providers/pro_provider.dart';
 import '../../widgets/neighborhood/dashboard_widget.dart';
 import '../../widgets/neighborhood/dna_widget.dart';
 import '../../widgets/neighborhood/life_radius_widget.dart';
+import '../../widgets/neighborhood/time_machine_widget.dart';
 import '../../widgets/neighborhood/timeline_widget.dart';
 import '../../widgets/neighborhood/ai_story_widget.dart';
 import '../../widgets/neighborhood/future_score_widget.dart';
@@ -89,7 +90,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
           topPadding: 0,
         );
       case 4:
-        return NeighborhoodTimelineWidget(score: result.score, topPadding: 0);
+        return _TimelineTab(score: result.score);
       case 5:
         return AIStoryWidget(result: result, topPadding: 0);
       case 6:
@@ -280,6 +281,59 @@ class _ActionChip extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Combined Timeline + Time Machine tab ──────────────────────────────────────
+
+class _TimelineTab extends StatelessWidget {
+  final LocationScore score;
+  const _TimelineTab({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Historical development timeline
+          NeighborhoodTimelineWidget(score: score, topPadding: 0),
+
+          // ── Divider ─────────────────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 4, 18, 16),
+            child: Row(
+              children: [
+                const Expanded(child: Divider(color: _kBorder)),
+                const SizedBox(width: 12),
+                Icon(Icons.access_time_rounded,
+                    size: 12, color: Colors.white.withValues(alpha: 0.28)),
+                const SizedBox(width: 6),
+                Text(
+                  'DAILY ACTIVITY RADAR',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.28),
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.6,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(child: Divider(color: _kBorder)),
+              ],
+            ),
+          ),
+
+          // Time Machine — fixed height so Expanded children inside resolve
+          SizedBox(
+            height: 520,
+            child: TimeMachineWidget(score: score, topPadding: 0),
+          ),
+
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }
