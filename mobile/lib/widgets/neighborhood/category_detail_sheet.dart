@@ -582,7 +582,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${widget.cat.count} places in this category',
+                  '${widget.cat.count} places found within 2km',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.38),
                     fontSize: 12,
@@ -963,11 +963,17 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
     final label = _scoreLabel(score).toLowerCase();
     final color = _color;
 
-    // Build bullet points from actual data
+    // Build accurate bullet points: count is total within search radius (2km),
+    // closestM is distance to the single nearest — not a containing radius.
     final bullets = <String>[];
     for (final st in _subtypes.take(4)) {
       final stLabel = _subTypeLabel[st.type] ?? _prettify(st.type);
-      bullets.add('${st.count} $stLabel within ${_dist(st.closestM)}');
+      final within500 = widget.amenities
+          .where((a) => a.type == st.type && (a.distanceMeters ?? 99999) <= 500)
+          .length;
+      final nearestStr = _dist(st.closestM);
+      final extra = within500 > 0 ? ', $within500 within 500m' : '';
+      bullets.add('${st.count} $stLabel within 2km$extra · nearest: $nearestStr');
     }
     if (widget.cat.closest?.walkingMinutes != null) {
       bullets.add('Nearest place: ${widget.cat.closest!.walkingMinutes} min walk');
@@ -1042,7 +1048,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
       _Stat('Walk time', closest?.walkingMinutes != null ? '${closest!.walkingMinutes} min' : '—', Icons.directions_walk_rounded),
       _Stat('Within 500m', '$within500 places', Icons.radio_button_checked_rounded),
       _Stat('Within 1km', '$within1k places', Icons.radio_button_off_rounded),
-      _Stat('Total nearby', '${widget.cat.count} places', Icons.place_rounded),
+      _Stat('Within 2km', '${widget.cat.count} places', Icons.place_rounded),
       _Stat('Score', '${widget.cat.score.round()} / 100', Icons.bar_chart_rounded),
     ];
 
