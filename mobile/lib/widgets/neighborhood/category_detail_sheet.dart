@@ -438,7 +438,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
           slivers: [
             SliverToBoxAdapter(child: _buildHandle()),
             SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildSubtypeCounts()),
+            SliverToBoxAdapter(child: _buildScoreOverview()),
             if (widget.cat.id == 'transportation')
               SliverToBoxAdapter(child: _buildTransportDNA()),
             SliverToBoxAdapter(child: _buildBreakdown()),
@@ -599,32 +599,45 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
   // ── Score overview chart ─────────────────────────────────────────────────────
 
   Widget _buildScoreOverview() {
-    const labels = ['0–200m', '–500m', '–1km', '–2km', '–5km'];
+    const xLabels = ['0–200m', '–500m', '–1km', '–2km', '–5km'];
+    const leftPad = 32.0;
     final color = _color;
 
     return _Section(
       title: 'SCORE OVERVIEW',
       child: SizedBox(
-        height: 130,
-        child: CustomPaint(
-          painter: _SparklinePainter(values: _curve, color: color),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: labels.map((l) => Expanded(
-                child: Text(
-                  l,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.3),
-                    fontSize: 9,
-                  ),
+        height: 168,
+        child: Stack(
+          children: [
+            // Chart canvas (leaves 20px at bottom for X labels)
+            Positioned(
+              left: 0, right: 0, top: 0, bottom: 20,
+              child: CustomPaint(
+                painter: _SparklinePainter(
+                  values: _curve,
+                  color: color,
+                  leftPad: leftPad,
                 ),
-              )).toList(),
+              ),
             ),
-          ),
+            // X-axis labels aligned to the chart area
+            Positioned(
+              left: leftPad, right: 0, bottom: 0, height: 20,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: xLabels.map((l) => Expanded(
+                  child: Text(
+                    l,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.30),
+                      fontSize: 8.5,
+                    ),
+                  ),
+                )).toList(),
+              ),
+            ),
+          ],
         ),
       ),
     ).animate(delay: 80.ms).fadeIn(duration: 350.ms);
@@ -1363,43 +1376,93 @@ class _StatTile extends StatelessWidget {
 class _SparklinePainter extends CustomPainter {
   final List<double> values;
   final Color color;
-  const _SparklinePainter({required this.values, required this.color});
+  final double leftPad;
+
+  const _SparklinePainter({
+    required this.values,
+    required this.color,
+    this.leftPad = 0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
-    final maxV = values.reduce(max).clamp(1, 100);
-    final w = size.width / (values.length - 1);
-    final chartH = size.height - 20;
-    final pts = List.generate(values.length, (i) {
-      final x = i * w;
-      final y = chartH - (values[i] / maxV * chartH * 0.8);
-      return Offset(x, y);
-    });
 
-    // Gradient fill
-    final path = ui.Path()..moveTo(pts.first.dx, pts.first.dy);
+    const topPad    = 16.0; // room for score labels above dots
+    const bottomPad = 6.0;  // gap above the X-axis line
+    final chartW = size.width - leftPad;
+    final chartH = size.height - topPad - bottomPad;
+    // Y coordinate for a given score (0-100 scale)
+    double scoreY(double s) => topPad + chartH - (s / 100) * chartH;
+
+    final tp = TextPainter(textDirection: TextDirection.ltr);
+
+    // ── Horizontal grid lines + Y-axis labels ──────────────────────────────
+    const yTicks = [0, 25, 50, 75, 100];
+    for (final yv in yTicks) {
+      final y = scoreY(yv.toDouble());
+      final isBaseline = yv == 0;
+
+      canvas.drawLine(
+        Offset(leftPad, y),
+        Offset(size.width, y),
+        Paint()
+          ..color = Colors.white.withOpacity(isBaseline ? 0.20 : 0.055)
+          ..strokeWidth = isBaseline ? 1.2 : 0.8,
+      );
+
+      tp.text = TextSpan(
+        text: '$yv',
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.28),
+          fontSize: 8.5,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+      tp.layout();
+      tp.paint(canvas, Offset(
+        leftPad - tp.width - 5,
+        y - tp.height / 2,
+      ));
+    }
+
+    // ── Y-axis vertical line ───────────────────────────────────────────────
+    canvas.drawLine(
+      Offset(leftPad, scoreY(100)),
+      Offset(leftPad, scoreY(0)),
+      Paint()
+        ..color = Colors.white.withOpacity(0.20)
+        ..strokeWidth = 1.2,
+    );
+
+    // ── Data points ────────────────────────────────────────────────────────
+    final step = chartW / (values.length - 1);
+    final pts = List.generate(values.length, (i) =>
+        Offset(leftPad + i * step, scoreY(values[i])));
+
+    // Gradient fill under curve
+    final fillPath = ui.Path()..moveTo(pts.first.dx, pts.first.dy);
     for (int i = 1; i < pts.length; i++) {
       final cp1 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i - 1].dy);
       final cp2 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i].dy);
-      path.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, pts[i].dx, pts[i].dy);
+      fillPath.cubicTo(cp1.dx, cp1.dy, cp2.dx, cp2.dy, pts[i].dx, pts[i].dy);
     }
-    path
-      ..lineTo(size.width, chartH)
-      ..lineTo(0, chartH)
+    fillPath
+      ..lineTo(size.width, scoreY(0))
+      ..lineTo(leftPad, scoreY(0))
       ..close();
 
     canvas.drawPath(
-      path,
+      fillPath,
       Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [color.withOpacity(0.25), color.withOpacity(0.02)],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, chartH)),
+          colors: [color.withOpacity(0.28), color.withOpacity(0.02)],
+        ).createShader(Rect.fromLTWH(leftPad, topPad, chartW, chartH)),
     );
 
-    // Line
+    // Bezier line
     final linePath = ui.Path()..moveTo(pts.first.dx, pts.first.dy);
     for (int i = 1; i < pts.length; i++) {
       final cp1 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i - 1].dy);
@@ -1415,26 +1478,24 @@ class _SparklinePainter extends CustomPainter {
         ..strokeCap = StrokeCap.round,
     );
 
-    // Dots
-    for (final p in pts) {
-      canvas.drawCircle(p, 4, Paint()..color = color);
-      canvas.drawCircle(p, 3, Paint()..color = _kBg);
-    }
-
-    // Score labels on dots
-    final tp = TextPainter(textDirection: TextDirection.ltr);
+    // Dots + score labels
     for (int i = 0; i < pts.length; i++) {
+      final p = pts[i];
+      canvas.drawCircle(p, 4.5, Paint()..color = color);
+      canvas.drawCircle(p, 3.0, Paint()..color = _kBg);
+
       tp.text = TextSpan(
         text: values[i].round().toString(),
         style: TextStyle(color: color, fontSize: 8.5, fontWeight: FontWeight.w700),
       );
       tp.layout();
-      tp.paint(canvas, Offset(pts[i].dx - tp.width / 2, pts[i].dy - 16));
+      tp.paint(canvas, Offset(p.dx - tp.width / 2, p.dy - 16));
     }
   }
 
   @override
-  bool shouldRepaint(_SparklinePainter old) => old.values != values;
+  bool shouldRepaint(_SparklinePainter old) =>
+      old.values != values || old.leftPad != leftPad;
 }
 
 // ── Ring painter ──────────────────────────────────────────────────────────────
