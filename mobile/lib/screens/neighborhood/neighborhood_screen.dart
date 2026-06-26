@@ -5,13 +5,19 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/address_model.dart';
 import '../../models/score_model.dart';
 import '../../providers/analysis_provider.dart';
+import '../../providers/alerts_provider.dart';
+import '../../providers/compare_provider.dart';
+import '../../providers/pro_provider.dart';
 import '../../widgets/neighborhood/dashboard_widget.dart';
 import '../../widgets/neighborhood/dna_widget.dart';
 import '../../widgets/neighborhood/life_radius_widget.dart';
-import '../../widgets/neighborhood/time_machine_widget.dart';
+import '../../widgets/neighborhood/timeline_widget.dart';
 import '../../widgets/neighborhood/ai_story_widget.dart';
 import '../../widgets/neighborhood/future_score_widget.dart';
 import '../../widgets/map/map_tab_body.dart';
+import '../alerts/alerts_screen.dart';
+import '../compare/compare_screen.dart';
+import '../paywall/paywall_screen.dart';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const _kBg       = Color(0xFF060B14);
@@ -56,6 +62,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
       children: [
         SizedBox(height: top),
         _ScoreHeader(score: result.score, address: analysis.address),
+        _ActionBar(score: result.score, address: analysis.address),
         _TabStrip(
           current: _tab,
           tabs: _tabs,
@@ -82,7 +89,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
           topPadding: 0,
         );
       case 4:
-        return TimeMachineWidget(score: result.score, topPadding: 0);
+        return NeighborhoodTimelineWidget(score: result.score, topPadding: 0);
       case 5:
         return AIStoryWidget(result: result, topPadding: 0);
       case 6:
@@ -90,6 +97,191 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
       default:
         return const SizedBox();
     }
+  }
+}
+
+// ── Action bar — Compare + Follow ─────────────────────────────────────────────
+
+class _ActionBar extends ConsumerWidget {
+  final LocationScore score;
+  final AddressModel? address;
+  const _ActionBar({required this.score, this.address});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (address == null) return const SizedBox.shrink();
+
+    final compare  = ref.watch(compareProvider);
+    final alerts   = ref.watch(alertsProvider);
+    final pro      = ref.watch(proProvider);
+    final isSaved  = compare.contains(CompareNotifier.idFor(address!));
+    final isFollowing = alerts.isFollowing(address!);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 7, 14, 7),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        border: Border(bottom: BorderSide(color: _kBorder)),
+      ),
+      child: Row(
+        children: [
+          // Compare button
+          _ActionChip(
+            icon: isSaved
+                ? Icons.compare_arrows_rounded
+                : Icons.add_chart_rounded,
+            label: isSaved ? 'Comparing' : 'Compare',
+            active: isSaved,
+            color: _kAccent,
+            onTap: () {
+              if (isSaved) {
+                CompareScreen.show(context);
+                return;
+              }
+              // Free users can save up to maxCompare
+              if (!pro.isPro &&
+                  compare.items.length >= pro.maxCompare) {
+                PaywallScreen.show(context);
+                return;
+              }
+              ref
+                  .read(compareProvider.notifier)
+                  .add(address!, score);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Added to comparison'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          const SizedBox(width: 8),
+          // View comparison (only when saved)
+          if (isSaved) ...[
+            _ActionChip(
+              icon: Icons.open_in_new_rounded,
+              label: 'View Compare',
+              active: false,
+              color: _kAccent2,
+              onTap: () => CompareScreen.show(context),
+            ),
+            const SizedBox(width: 8),
+          ],
+          // Follow / Alerts button
+          _ActionChip(
+            icon: isFollowing
+                ? Icons.notifications_active_rounded
+                : Icons.notifications_none_rounded,
+            label: isFollowing ? 'Following' : 'Follow',
+            active: isFollowing,
+            color: const Color(0xFF22C55E),
+            onTap: () {
+              if (!pro.isPro) {
+                PaywallScreen.show(context);
+                return;
+              }
+              if (isFollowing) {
+                AlertsScreen.show(context);
+                return;
+              }
+              ref.read(alertsProvider.notifier).follow(
+                    address!,
+                    score.overall,
+                  );
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Now following this neighbourhood'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          const Spacer(),
+          // Alerts shortcut
+          GestureDetector(
+            onTap: () => AlertsScreen.show(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _kSurface2,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: _kBorder),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.notifications_outlined,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.45)),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Alerts',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.45),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: active ? color.withValues(alpha: 0.12) : _kSurface2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: active ? color.withValues(alpha: 0.5) : _kBorder,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon,
+                size: 13,
+                color: active ? color : Colors.white.withValues(alpha: 0.45)),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: active ? color : Colors.white.withValues(alpha: 0.45),
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -136,7 +328,7 @@ class _EmptyExplore extends StatelessWidget {
                   'Search an address in the Search tab\nto explore its full neighbourhood profile.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.42),
+                    color: Colors.white.withValues(alpha: 0.42),
                     fontSize: 14,
                     height: 1.55,
                   ),
@@ -191,7 +383,7 @@ class _ScoreHeader extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: color, width: 2.5),
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
             ),
             child: Center(
               child: Text(
@@ -217,7 +409,7 @@ class _ScoreHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.15),
+                        color: color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -234,7 +426,7 @@ class _ScoreHeader extends StatelessWidget {
                     Text(
                       '${score.categories.length} categories',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.32),
+                        color: Colors.white.withValues(alpha: 0.32),
                         fontSize: 11,
                       ),
                     ),
@@ -268,7 +460,7 @@ class _ScoreHeader extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.65),
+                    color: Colors.white.withValues(alpha: 0.65),
                     fontSize: 12,
                   ),
                 ),
@@ -326,12 +518,14 @@ class _TabStrip extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
               decoration: BoxDecoration(
-                color: active ? _kAccent.withOpacity(0.14) : _kSurface2,
+                color: active
+                    ? _kAccent.withValues(alpha: 0.14)
+                    : _kSurface2,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: active
                       ? _kAccent
-                      : Colors.white.withOpacity(0.07),
+                      : Colors.white.withValues(alpha: 0.07),
                   width: 1.5,
                 ),
               ),
@@ -345,7 +539,7 @@ class _TabStrip extends StatelessWidget {
                     style: TextStyle(
                       color: active
                           ? _kAccent
-                          : Colors.white.withOpacity(0.45),
+                          : Colors.white.withValues(alpha: 0.45),
                       fontSize: 12,
                       fontWeight:
                           active ? FontWeight.w700 : FontWeight.w500,

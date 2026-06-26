@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/shell_provider.dart';
+import '../explorer/explorer_screen.dart';
 import '../home/home_screen.dart';
 import '../neighborhood/neighborhood_screen.dart';
 import '../settings/settings_screen.dart';
@@ -25,6 +26,7 @@ class MainShell extends ConsumerWidget {
         children: const [
           HomeScreen(),
           NeighborhoodScreen(),
+          ExplorerScreen(),
           SettingsScreen(),
         ],
       ),
@@ -43,9 +45,10 @@ class _BottomNav extends StatelessWidget {
   const _BottomNav({required this.current, required this.onTap});
 
   static const _items = [
-    (Icons.search_rounded,  Icons.search_rounded,  'Search'),
-    (Icons.explore_outlined, Icons.explore_rounded, 'Explore'),
-    (Icons.person_outline_rounded, Icons.person_rounded, 'You'),
+    (Icons.search_rounded,         Icons.search_rounded,         'Search'),
+    (Icons.explore_outlined,       Icons.explore_rounded,        'Explore'),
+    (Icons.travel_explore_rounded, Icons.travel_explore_rounded, 'Discover'),
+    (Icons.person_outline_rounded, Icons.person_rounded,         'You'),
   ];
 
   @override
@@ -77,7 +80,7 @@ class _BottomNav extends StatelessWidget {
                         key: ValueKey(active),
                         color: active
                             ? kShellAccent
-                            : Colors.white.withOpacity(0.32),
+                            : Colors.white.withValues(alpha: 0.32),
                         size: 23,
                       ),
                     ),
@@ -87,7 +90,7 @@ class _BottomNav extends StatelessWidget {
                       style: TextStyle(
                         color: active
                             ? kShellAccent
-                            : Colors.white.withOpacity(0.32),
+                            : Colors.white.withValues(alpha: 0.32),
                         fontSize: 10.5,
                         fontWeight:
                             active ? FontWeight.w600 : FontWeight.w400,
