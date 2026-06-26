@@ -82,7 +82,7 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: widget.topPadding),
+        SizedBox(height: widget.topPadding + 32),
 
         // Header
         Padding(
@@ -91,19 +91,41 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Life Radius',
-                style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-              ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.2, end: 0),
-              const SizedBox(height: 6),
+                'PROXIMITY',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2.2,
+                  height: 1,
+                ),
+              ).animate().fadeIn(duration: 400.ms),
+              const SizedBox(height: 10),
               const Text(
-                'Everything within reach — mapped around your address.',
-                style: TextStyle(color: Colors.white54, fontSize: 13.5, height: 1.5),
-              ).animate(delay: 100.ms).fadeIn(),
+                'Life Radius',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 38,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1.0,
+                  height: 1.05,
+                ),
+              ).animate(delay: 60.ms).fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
+              const SizedBox(height: 16),
+              Text(
+                'Everything within reach —\nmapped around your address.',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.72),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                  height: 1.6,
+                ),
+              ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // Filter chips
         SizedBox(

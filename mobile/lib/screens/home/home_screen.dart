@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../config/app_constants.dart';
 import '../../providers/analysis_provider.dart';
 import '../../providers/country_provider.dart';
 import '../../providers/preferences_provider.dart';
@@ -15,6 +19,33 @@ const _kBg       = Color(0xFF060B14);
 const _kSurface  = Color(0xFF0D1625);
 const _kSurface2 = Color(0xFF131F33);
 const _kAccent   = Color(0xFF3B82F6);
+const _kBorder   = Color(0xFF1A2845);
+
+// ── Suggestion model ──────────────────────────────────────────────────────────
+
+class _Suggestion {
+  final String display;
+  final String primary;
+  final String secondary;
+
+  const _Suggestion({
+    required this.display,
+    required this.primary,
+    required this.secondary,
+  });
+
+  factory _Suggestion.fromJson(Map<String, dynamic> json) {
+    final raw = json['display_name'] as String? ?? '';
+    final parts = raw.split(', ');
+    return _Suggestion(
+      display: raw,
+      primary: parts.take(2).join(', '),
+      secondary: parts.length > 2 ? parts.skip(2).take(2).join(', ') : '',
+    );
+  }
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -24,15 +55,99 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey           = GlobalKey<FormState>();
   final _addressController = TextEditingController();
-  final _scrollController = ScrollController();
+  final _scrollController  = ScrollController();
+  final _focusNode         = FocusNode();
+  final _dio               = Dio();
+
+  Timer? _debounce;
+  List<_Suggestion> _suggestions = [];
+  bool _showSuggestions = false;
+  bool _fetching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode.addListener(_onFocusChange);
+  }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _addressController.dispose();
     _scrollController.dispose();
+    _focusNode
+      ..removeListener(_onFocusChange)
+      ..dispose();
+    _dio.close();
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      // Small delay so tap-on-suggestion fires before we hide the list
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (mounted) setState(() => _showSuggestions = false);
+      });
+    }
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    if (value.trim().length < 3) {
+      setState(() {
+        _suggestions = [];
+        _showSuggestions = false;
+        _fetching = false;
+      });
+      return;
+    }
+    setState(() => _fetching = true);
+    _debounce = Timer(const Duration(milliseconds: 420), () => _fetchSuggestions(value));
+  }
+
+  Future<void> _fetchSuggestions(String query) async {
+    final country = ref.read(selectedCountryProvider);
+    final cc = (country?.code ?? 'PT').toLowerCase();
+    try {
+      final resp = await _dio.get<List<dynamic>>(
+        '${AppConstants.nominatimBaseUrl}/search',
+        queryParameters: {
+          'q': query,
+          'format': 'jsonv2',
+          'limit': 5,
+          'addressdetails': 1,
+          'countrycodes': cc,
+        },
+        options: Options(
+          headers: {'User-Agent': 'HomeScope/1.0 (mobile)'},
+          receiveTimeout: const Duration(seconds: 8),
+        ),
+      );
+      if (!mounted) return;
+      final list = (resp.data ?? [])
+          .whereType<Map<String, dynamic>>()
+          .map(_Suggestion.fromJson)
+          .toList();
+      setState(() {
+        _suggestions = list;
+        _showSuggestions = list.isNotEmpty && _focusNode.hasFocus;
+        _fetching = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _fetching = false);
+    }
+  }
+
+  void _pickSuggestion(_Suggestion s) {
+    _addressController.text = s.display;
+    setState(() {
+      _suggestions = [];
+      _showSuggestions = false;
+    });
+    _focusNode.unfocus();
+    _analyze();
   }
 
   Future<void> _analyze() async {
@@ -45,9 +160,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           profile: profile,
         );
     if (!mounted) return;
-    final state = ref.read(analysisProvider);
-    if (state.status == AnalysisStatus.done) {
-      // Switch to Explore tab
+    if (ref.read(analysisProvider).status == AnalysisStatus.done) {
       ref.read(shellTabProvider.notifier).state = 1;
     }
   }
@@ -130,7 +243,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        // 7-segment donut logo
                         _Logo(),
                         const SizedBox(width: 10),
                         const Text(
@@ -158,9 +270,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Know your\nneighbourhood.',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 40,
                               fontWeight: FontWeight.w800,
@@ -194,8 +306,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         decoration: BoxDecoration(
                           color: _kSurface,
                           borderRadius: BorderRadius.circular(22),
-                          border:
-                              Border.all(color: Colors.white.withOpacity(0.07)),
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.07)),
                           boxShadow: [
                             BoxShadow(
                               color: _kAccent.withOpacity(0.08),
@@ -210,7 +322,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Country chip — taps into You tab to change
+                              // Country chip
                               GestureDetector(
                                 onTap: () => ref
                                     .read(shellTabProvider.notifier)
@@ -222,23 +334,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     color: Colors.white.withOpacity(0.05),
                                     borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                        color:
-                                            Colors.white.withOpacity(0.08)),
+                                        color: Colors.white.withOpacity(0.08)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
                                         _flag(country?.code ?? 'PT'),
-                                        style:
-                                            const TextStyle(fontSize: 14),
+                                        style: const TextStyle(fontSize: 14),
                                       ),
                                       const SizedBox(width: 7),
                                       Text(
                                         country?.name ?? 'Portugal',
                                         style: TextStyle(
-                                          color:
-                                              Colors.white.withOpacity(0.6),
+                                          color: Colors.white.withOpacity(0.6),
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -246,7 +355,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       const SizedBox(width: 4),
                                       Icon(Icons.expand_more_rounded,
                                           size: 14,
-                                          color: Colors.white.withOpacity(0.3)),
+                                          color:
+                                              Colors.white.withOpacity(0.3)),
                                     ],
                                   ),
                                 ),
@@ -256,17 +366,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               // Address input
                               TextFormField(
                                 controller: _addressController,
+                                focusNode: _focusNode,
                                 style: const TextStyle(
                                     color: Colors.white, fontSize: 15),
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Rua Augusta 150, Lisboa',
-                                  prefixIcon: Icon(
-                                    Icons.search_rounded,
-                                    color: Colors.white.withOpacity(0.3),
-                                    size: 20,
-                                  ),
-                                  suffixIcon: _addressController
-                                          .text.isNotEmpty
+                                  prefixIcon: _fetching
+                                      ? Padding(
+                                          padding: const EdgeInsets.all(14),
+                                          child: SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 1.8,
+                                              color: Colors.white
+                                                  .withOpacity(0.4),
+                                            ),
+                                          ),
+                                        )
+                                      : Icon(
+                                          Icons.search_rounded,
+                                          color: Colors.white.withOpacity(0.3),
+                                          size: 20,
+                                        ),
+                                  suffixIcon: _addressController.text.isNotEmpty
                                       ? IconButton(
                                           icon: Icon(Icons.clear_rounded,
                                               color: Colors.white
@@ -274,26 +397,78 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               size: 17),
                                           onPressed: () {
                                             _addressController.clear();
-                                            setState(() {});
+                                            setState(() {
+                                              _suggestions = [];
+                                              _showSuggestions = false;
+                                            });
                                           },
                                         )
                                       : null,
                                 ),
                                 textInputAction: TextInputAction.search,
-                                onFieldSubmitted: (_) => _analyze(),
-                                onChanged: (_) => setState(() {}),
+                                onFieldSubmitted: (_) {
+                                  setState(() => _showSuggestions = false);
+                                  _analyze();
+                                },
+                                onChanged: (v) {
+                                  setState(() {});
+                                  _onChanged(v);
+                                },
                                 validator: ref
                                     .read(validationServiceProvider)
                                     .validateAddress,
                               ),
+
+                              // ── Suggestion dropdown ───────────────────
+                              AnimatedSize(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeOut,
+                                child: _showSuggestions && _suggestions.isNotEmpty
+                                    ? Column(
+                                        children: [
+                                          const SizedBox(height: 6),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              color: _kSurface2,
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              border: Border.all(
+                                                  color: _kBorder),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                for (int i = 0;
+                                                    i < _suggestions.length;
+                                                    i++) ...[
+                                                  if (i > 0)
+                                                    Divider(
+                                                      height: 1,
+                                                      color: Colors.white
+                                                          .withOpacity(0.05),
+                                                    ),
+                                                  _SuggestionTile(
+                                                    suggestion:
+                                                        _suggestions[i],
+                                                    onTap: () =>
+                                                        _pickSuggestion(
+                                                            _suggestions[i]),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink(),
+                              ),
+
                               const SizedBox(height: 14),
 
-                              // Analyze button
+                              // Scope It button
                               FilledButton.icon(
                                 onPressed: _analyze,
-                                icon: const Icon(Icons.auto_awesome_rounded,
-                                    size: 17),
-                                label: const Text('Analyze Address'),
+                                icon: const Icon(Icons.radar_rounded, size: 18),
+                                label: const Text('Scope It'),
                               ),
                             ],
                           ),
@@ -349,7 +524,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     const SizedBox(height: 32),
 
-                    // ── Dimension pills row ────────────────────────────────
+                    // ── Dimension pills ────────────────────────────────────
                     const _DimensionRow(),
 
                     const SizedBox(height: 48),
@@ -375,6 +550,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
+// ── Suggestion tile ───────────────────────────────────────────────────────────
+
+class _SuggestionTile extends StatelessWidget {
+  final _Suggestion suggestion;
+  final VoidCallback onTap;
+
+  const _SuggestionTile({required this.suggestion, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(
+                Icons.location_on_rounded,
+                size: 15,
+                color: _kAccent.withOpacity(0.65),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    suggestion.primary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (suggestion.secondary.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      suggestion.secondary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.38),
+                        fontSize: 11.5,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 // ── Mini logo (7-segment donut) ───────────────────────────────────────────────
 
 class _Logo extends StatelessWidget {
@@ -382,13 +620,13 @@ class _Logo extends StatelessWidget {
   Widget build(BuildContext context) {
     const size = 28.0;
     const colors = [
-      Color(0xFF29B6F6), // transport
-      Color(0xFF66BB6A), // education
-      Color(0xFFEF5350), // healthcare
-      Color(0xFFFFA726), // shopping
-      Color(0xFFAB47BC), // safety
-      Color(0xFF8D6E63), // religion
-      Color(0xFF26C6DA), // recreation
+      Color(0xFF29B6F6),
+      Color(0xFF66BB6A),
+      Color(0xFFEF5350),
+      Color(0xFFFFA726),
+      Color(0xFFAB47BC),
+      Color(0xFF8D6E63),
+      Color(0xFF26C6DA),
     ];
     return SizedBox(
       width: size,
@@ -409,7 +647,8 @@ class _DonutPainter extends CustomPainter {
     const sweepRad = (2 * 3.14159265 / segments) - gapRad;
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     for (int i = 0; i < segments; i++) {
-      final start = -1.5707963 + i * (2 * 3.14159265 / segments) + gapRad / 2;
+      final start =
+          -1.5707963 + i * (2 * 3.14159265 / segments) + gapRad / 2;
       canvas.drawArc(
         rect.deflate(4),
         start,
