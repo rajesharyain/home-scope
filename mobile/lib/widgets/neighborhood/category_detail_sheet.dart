@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -103,6 +104,29 @@ const _subTypeLabel = <String, String>{
   'church': 'Churches', 'mosque': 'Mosques',
   'temple': 'Temples', 'synagogue': 'Synagogues',
   'place_of_worship': 'Places of Worship',
+};
+
+// Per-sub-type accent colours for the transit radar
+const _kTransportColors = <String, Color>{
+  'subway_entrance': Color(0xFF8B5CF6),
+  'bus_stop':        Color(0xFF3B82F6),
+  'station':         Color(0xFF22C55E),
+  'taxi':            Color(0xFFF59E0B),
+  'bicycle_rental':  Color(0xFF06B6D4),
+  'tram_stop':       Color(0xFFEC4899),
+  'ferry_terminal':  Color(0xFF14B8A6),
+  'parking':         Color(0xFF64748B),
+};
+
+const _subTypeEmoji = <String, String>{
+  'subway_entrance': '🚇',
+  'bus_stop':        '🚌',
+  'station':         '🚆',
+  'taxi':            '🚕',
+  'bicycle_rental':  '🚲',
+  'tram_stop':       '🚃',
+  'ferry_terminal':  '⛴',
+  'parking':         '🅿',
 };
 
 const _subTypeIcon = <String, IconData>{
@@ -370,7 +394,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
       final closest = list.first.distanceMeters ?? 99999;
       final countFactor = 0.7 + (count / maxCount) * 0.3;
       final distFactor = closest < 200 ? 1.06 : closest < 500 ? 1.0 : closest < 1000 ? 0.95 : 0.88;
-      final score = (base * countFactor * distFactor).clamp(0, 100);
+      final score = (base * countFactor * distFactor).clamp(0.0, 100.0);
       return _SubType(type: e.key, count: count, score: score, closestM: closest);
     }).toList()
       ..sort((a, b) => b.score.compareTo(a.score)));
@@ -393,7 +417,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
     if (total == 0) return List.filled(thresholds.length, 0);
     return thresholds.map((t) {
       final inRange = widget.amenities.where((a) => (a.distanceMeters ?? 99999) <= t).length;
-      return (widget.cat.score * (0.35 + 0.65 * inRange / total)).clamp(0, 100);
+      return (widget.cat.score * (0.35 + 0.65 * inRange / total)).clamp(0.0, 100.0);
     }).toList();
   }
 
@@ -414,7 +438,11 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
           slivers: [
             SliverToBoxAdapter(child: _buildHandle()),
             SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(child: _buildScoreOverview()),
+            SliverToBoxAdapter(
+              child: widget.cat.id == 'transportation'
+                  ? _buildTransportDNA()
+                  : _buildScoreOverview(),
+            ),
             SliverToBoxAdapter(child: _buildBreakdown()),
             SliverToBoxAdapter(child: _buildNearby()),
             if (widget.address?.lat != null && widget.address?.lng != null)
@@ -602,6 +630,44 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
         ),
       ),
     ).animate(delay: 80.ms).fadeIn(duration: 350.ms);
+  }
+
+  // ── Transit radar (transportation only) ──────────────────────────────────────
+
+  Widget _buildTransportDNA() {
+    final subTypes = _subtypes.take(7).toList();
+    if (subTypes.isEmpty) return _buildScoreOverview();
+
+    final groups = <String, List<AmenityModel>>{};
+    for (final a in widget.amenities) {
+      groups.putIfAbsent(a.type, () => []).add(a);
+    }
+
+    return _Section(
+      title: 'TRANSIT RADAR',
+      child: LayoutBuilder(
+        builder: (ctx, constraints) {
+          final size = constraints.maxWidth;
+          return TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1600),
+            curve: Curves.easeOutCubic,
+            builder: (_, progress, __) => SizedBox(
+              width: size,
+              height: size,
+              child: CustomPaint(
+                painter: _TransportDNAPainter(
+                  subtypes: subTypes,
+                  amenityGroups: groups,
+                  baseColor: _color,
+                  animProgress: progress,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    ).animate(delay: 80.ms).fadeIn(duration: 300.ms);
   }
 
   // ── Breakdown ────────────────────────────────────────────────────────────────
@@ -1138,7 +1204,7 @@ class _SparklinePainter extends CustomPainter {
     });
 
     // Gradient fill
-    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+    final path = ui.Path()..moveTo(pts.first.dx, pts.first.dy);
     for (int i = 1; i < pts.length; i++) {
       final cp1 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i - 1].dy);
       final cp2 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i].dy);
@@ -1160,7 +1226,7 @@ class _SparklinePainter extends CustomPainter {
     );
 
     // Line
-    final linePath = Path()..moveTo(pts.first.dx, pts.first.dy);
+    final linePath = ui.Path()..moveTo(pts.first.dx, pts.first.dy);
     for (int i = 1; i < pts.length; i++) {
       final cp1 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i - 1].dy);
       final cp2 = Offset((pts[i - 1].dx + pts[i].dx) / 2, pts[i].dy);
@@ -1223,12 +1289,200 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
 
+// ── Transit DNA / radial radar painter ────────────────────────────────────────
+
+class _TransportDNAPainter extends CustomPainter {
+  final List<_SubType> subtypes;
+  final Map<String, List<AmenityModel>> amenityGroups;
+  final Color baseColor;
+  final double animProgress;
+
+  static const double _maxMeters = 2000.0;
+  static const List<double> _rings = [200.0, 500.0, 1000.0, 2000.0];
+  static const List<String> _ringLabels = ['200m', '500m', '1km', '2km'];
+
+  _TransportDNAPainter({
+    required this.subtypes,
+    required this.amenityGroups,
+    required this.baseColor,
+    this.animProgress = 1.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final center = Offset(cx, cy);
+    final maxR = min(size.width, size.height) / 2 - 58.0;
+
+    final tp = TextPainter(textDirection: TextDirection.ltr);
+
+    // ── Background circle ──
+    canvas.drawCircle(center, maxR + 4, Paint()..color = const Color(0xFF0A1628));
+
+    // ── Concentric dashed rings + distance labels ──
+    for (int ri = 0; ri < _rings.length; ri++) {
+      final r = (_rings[ri] / _maxMeters) * maxR;
+      final ringVis = (animProgress * _maxMeters / _rings[ri]).clamp(0.0, 1.0);
+      if (ringVis <= 0) continue;
+      _drawDashedRing(canvas, center, r, Colors.white.withOpacity(0.08 * ringVis));
+      if (ringVis > 0.6) {
+        final labelAlpha = ((ringVis - 0.6) / 0.4).clamp(0.0, 1.0);
+        tp.text = TextSpan(
+          text: _ringLabels[ri],
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.22 * labelAlpha),
+            fontSize: 8.5,
+            fontWeight: FontWeight.w500,
+          ),
+        );
+        tp.layout();
+        // Label at 20° from horizontal (avoids spoke collisions)
+        tp.paint(canvas, Offset(
+          cx + r * cos(pi / 9) + 3,
+          cy + r * sin(pi / 9) - tp.height / 2,
+        ));
+      }
+    }
+
+    if (subtypes.isEmpty) return;
+    final step = (2 * pi) / subtypes.length;
+
+    for (int i = 0; i < subtypes.length; i++) {
+      final angle = -pi / 2 + i * step;
+      final st = subtypes[i];
+      final stColor = _kTransportColors[st.type] ?? baseColor;
+      final sortedPts = [...(amenityGroups[st.type] ?? [])]
+        ..sort((a, b) => (a.distanceMeters ?? 99999).compareTo(b.distanceMeters ?? 99999));
+
+      // ── Animated spoke ──
+      final spokeLen = maxR * animProgress;
+      canvas.drawLine(
+        center,
+        Offset(cx + spokeLen * cos(angle), cy + spokeLen * sin(angle)),
+        Paint()
+          ..color = stColor.withOpacity(0.18)
+          ..strokeWidth = 1.2,
+      );
+
+      // ── Amenity dots — appear as sweep expands ──
+      final revealedM = animProgress * _maxMeters;
+      for (final a in sortedPts.take(10)) {
+        final d = (a.distanceMeters ?? 99999).toDouble();
+        if (d > revealedM) break;
+        final r = (d.clamp(0.0, _maxMeters) / _maxMeters) * maxR;
+        final dx = cx + r * cos(angle);
+        final dy = cy + r * sin(angle);
+        canvas.drawCircle(Offset(dx, dy), 7,
+            Paint()..color = stColor.withOpacity(0.10));
+        canvas.drawCircle(Offset(dx, dy), 4,
+            Paint()..color = stColor);
+        canvas.drawCircle(Offset(dx, dy), 4,
+            Paint()
+              ..color = Colors.white.withOpacity(0.30)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.0);
+      }
+
+      // ── Node + icon + label — fade in at the end ──
+      if (animProgress > 0.82) {
+        final alpha = ((animProgress - 0.82) / 0.18).clamp(0.0, 1.0);
+        final nx = cx + maxR * cos(angle);
+        final ny = cy + maxR * sin(angle);
+
+        canvas.drawCircle(Offset(nx, ny), 17,
+            Paint()..color = stColor.withOpacity(0.16 * alpha));
+        canvas.drawCircle(Offset(nx, ny), 17,
+            Paint()
+              ..color = stColor.withOpacity(0.55 * alpha)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.5);
+
+        // Emoji icon inside node
+        if (alpha > 0.1) {
+          final emoji = _subTypeEmoji[st.type] ?? '📍';
+          tp.text = TextSpan(
+            text: emoji,
+            style: const TextStyle(fontSize: 13),
+          );
+          tp.layout();
+          tp.paint(canvas, Offset(nx - tp.width / 2, ny - tp.height / 2));
+        }
+
+        // Sub-type name label
+        final shortLabel = (_subTypeLabel[st.type] ?? _prettify(st.type))
+            .split(' ').first;
+        final labelR = maxR + 36;
+        tp.text = TextSpan(
+          text: shortLabel,
+          style: TextStyle(
+            color: stColor.withOpacity(alpha),
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+          ),
+        );
+        tp.layout();
+        tp.paint(canvas, Offset(
+          cx + labelR * cos(angle) - tp.width / 2,
+          cy + labelR * sin(angle) - tp.height / 2,
+        ));
+
+        // Count
+        tp.text = TextSpan(
+          text: '${st.count}×',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.38 * alpha),
+            fontSize: 9.0,
+          ),
+        );
+        tp.layout();
+        final countR = maxR + 50;
+        tp.paint(canvas, Offset(
+          cx + countR * cos(angle) - tp.width / 2,
+          cy + countR * sin(angle) - tp.height / 2,
+        ));
+      }
+    }
+
+    // ── Home icon at centre (always on top) ──
+    canvas.drawCircle(center, 24, Paint()
+      ..color = Colors.white.withOpacity(0.08)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12));
+    canvas.drawCircle(center, 18, Paint()..color = Colors.white);
+    canvas.drawCircle(center, 18, Paint()
+      ..color = const Color(0xFF0A1628)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2);
+    tp.text = const TextSpan(text: '🏠', style: TextStyle(fontSize: 15));
+    tp.layout();
+    tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2 - 1));
+  }
+
+  void _drawDashedRing(Canvas canvas, Offset center, double r, Color color) {
+    if (r <= 0) return;
+    const segments = 48;
+    final segAngle = (2 * pi) / segments;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    for (int s = 0; s < segments; s++) {
+      if (s.isOdd) continue;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: r),
+        s * segAngle,
+        segAngle * 0.6,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TransportDNAPainter old) => old.animProgress != animProgress;
+}
+
 // ── Utilities ──────────────────────────────────────────────────────────────────
 
 String _prettify(String type) =>
     type.replaceAll('_', ' ').split(' ').map((w) => w.isEmpty ? '' : w[0].toUpperCase() + w.substring(1)).join(' ');
-
-String _dist(int? m) {
-  if (m == null) return '—';
-  return m < 1000 ? '${m}m' : '${(m / 1000).toStringAsFixed(1)}km';
-}
