@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/address_model.dart';
 import '../../models/score_model.dart';
 import '../../providers/analysis_provider.dart';
+import '../../widgets/neighborhood/dashboard_widget.dart';
 import '../../widgets/neighborhood/dna_widget.dart';
 import '../../widgets/neighborhood/life_radius_widget.dart';
 import '../../widgets/neighborhood/time_machine_widget.dart';
@@ -32,6 +33,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
   int _tab = 0;
 
   static const _tabs = [
+    ('📊', 'Summary'),
     ('🗺', 'Map'),
     ('🧬', 'DNA'),
     ('📍', 'Radius'),
@@ -67,21 +69,23 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
   Widget _buildContent(AnalysisResult result, AddressModel? address) {
     switch (_tab) {
       case 0:
-        return const MapTabBody();
+        return DashboardWidget(result: result, topPadding: 0);
       case 1:
-        return DNAWidget(score: result.score, address: address, topPadding: 0);
+        return const MapTabBody();
       case 2:
+        return DNAWidget(score: result.score, address: address, topPadding: 0);
+      case 3:
         return LifeRadiusWidget(
           amenities: result.amenities,
           addressLat: address?.lat,
           addressLng: address?.lng,
           topPadding: 0,
         );
-      case 3:
-        return TimeMachineWidget(score: result.score, topPadding: 0);
       case 4:
-        return AIStoryWidget(result: result, topPadding: 0);
+        return TimeMachineWidget(score: result.score, topPadding: 0);
       case 5:
+        return AIStoryWidget(result: result, topPadding: 0);
+      case 6:
         return FutureScoreWidget(score: result.score, topPadding: 0);
       default:
         return const SizedBox();
