@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../providers/analysis_provider.dart';
 import '../../providers/country_provider.dart';
 import '../../providers/preferences_provider.dart';
+import '../../providers/shell_provider.dart';
 import '../../services/validation_service.dart';
 import '../../widgets/common/loading_overlay.dart';
 import '../../widgets/home/score_badge.dart';
+
+// ── Design tokens ──────────────────────────────────────────────────────────────
+const _kBg       = Color(0xFF060B14);
+const _kSurface  = Color(0xFF0D1625);
+const _kSurface2 = Color(0xFF131F33);
+const _kAccent   = Color(0xFF3B82F6);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -20,11 +26,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _formKey = GlobalKey<FormState>();
   final _addressController = TextEditingController();
-  bool _isSearchFocused = false;
+  final _scrollController = ScrollController();
 
   @override
   void dispose() {
     _addressController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -37,143 +44,234 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           countryCode: country?.code ?? 'PT',
           profile: profile,
         );
-    if (mounted) {
-      final state = ref.read(analysisProvider);
-      if (state.status == AnalysisStatus.done) {
-        context.pushNamed('neighborhood');
-      }
+    if (!mounted) return;
+    final state = ref.read(analysisProvider);
+    if (state.status == AnalysisStatus.done) {
+      // Switch to Explore tab
+      ref.read(shellTabProvider.notifier).state = 1;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final analysis = ref.watch(analysisProvider);
-    final history = ref.watch(searchHistoryProvider);
-    final country = ref.watch(selectedCountryProvider);
+    final history  = ref.watch(searchHistoryProvider);
+    final country  = ref.watch(selectedCountryProvider);
+    final top      = MediaQuery.of(context).padding.top;
 
     ref.listen(analysisProvider, (_, next) {
       if (next.status == AnalysisStatus.error && next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.error!),
-            backgroundColor: theme.colorScheme.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(next.error!),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ));
       }
     });
 
-    return Scaffold(
-      body: LoadingOverlay(
-        isLoading: analysis.isLoading,
-        message: analysis.statusMessage,
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar.large(
-              floating: false,
-              pinned: true,
-              expandedHeight: 200,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.history_rounded),
-                  onPressed: () => context.pushNamed('history'),
-                  tooltip: 'Search history',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded),
-                  onPressed: () => context.pushNamed('settings'),
-                  tooltip: 'Settings',
-                ),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                title: Text(
-                  'HomeScope',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
-                expandedTitleScale: 1.5,
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.colorScheme.primaryContainer.withOpacity(0.3),
-                        theme.colorScheme.surface,
-                      ],
-                    ),
-                  ),
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: _kBg,
+        colorScheme:
+            const ColorScheme.dark(primary: _kAccent, surface: _kSurface),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: _kSurface2,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _kAccent, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFEF4444)),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
+          ),
+          hintStyle:
+              TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: _kAccent,
+            foregroundColor: Colors.white,
+            minimumSize: const Size.fromHeight(52),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            textStyle: const TextStyle(
+                fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: -0.2),
+          ),
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: _kBg,
+        body: LoadingOverlay(
+          isLoading: analysis.isLoading,
+          message: analysis.statusMessage,
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // ── Top bar ────────────────────────────────────────────────
+              SliverPadding(
+                padding: EdgeInsets.only(top: top + 16),
+                sliver: SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 80, 20, 60),
-                    child: Text(
-                      'Know your neighborhood\nbefore you move.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        // 7-segment donut logo
+                        _Logo(),
+                        const SizedBox(width: 10),
+                        const Text(
+                          'HomeScope',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.all(20),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Search card
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
+
+              SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Hero ─────────────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 36, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Know your\nneighbourhood.',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 40,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1.2,
+                              height: 1.08,
+                            ),
+                          )
+                              .animate()
+                              .fadeIn(duration: 500.ms)
+                              .slideY(begin: 0.08, end: 0),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Transport · Schools · Health · Safety · Shops · Parks',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.45),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.2,
+                            ),
+                          ).animate(delay: 80.ms).fadeIn(duration: 400.ms),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // ── Search card ───────────────────────────────────────
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: _kSurface,
+                          borderRadius: BorderRadius.circular(22),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.07)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _kAccent.withOpacity(0.08),
+                              blurRadius: 40,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(20),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Country chip — taps into You tab to change
+                              GestureDetector(
+                                onTap: () => ref
+                                    .read(shellTabProvider.notifier)
+                                    .state = 2,
+                                child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6,
-                                  ),
+                                      horizontal: 12, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(20),
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                        color:
+                                            Colors.white.withOpacity(0.08)),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _countryFlag(country?.code ?? 'PT'),
-                                        style: const TextStyle(fontSize: 16),
+                                        _flag(country?.code ?? 'PT'),
+                                        style:
+                                            const TextStyle(fontSize: 14),
                                       ),
-                                      const SizedBox(width: 6),
+                                      const SizedBox(width: 7),
                                       Text(
                                         country?.name ?? 'Portugal',
-                                        style: theme.textTheme.labelMedium?.copyWith(
-                                          color: theme.colorScheme.onPrimaryContainer,
-                                          fontWeight: FontWeight.w600,
+                                        style: TextStyle(
+                                          color:
+                                              Colors.white.withOpacity(0.6),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
+                                      const SizedBox(width: 4),
+                                      Icon(Icons.expand_more_rounded,
+                                          size: 14,
+                                          color: Colors.white.withOpacity(0.3)),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Focus(
-                              onFocusChange: (f) => setState(() => _isSearchFocused = f),
-                              child: TextFormField(
+                              ),
+                              const SizedBox(height: 14),
+
+                              // Address input
+                              TextFormField(
                                 controller: _addressController,
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 15),
                                 decoration: InputDecoration(
                                   hintText: 'e.g. Rua Augusta 150, Lisboa',
-                                  labelText: 'Enter Address',
-                                  prefixIcon: const Icon(Icons.search_rounded),
-                                  suffixIcon: _addressController.text.isNotEmpty
+                                  prefixIcon: Icon(
+                                    Icons.search_rounded,
+                                    color: Colors.white.withOpacity(0.3),
+                                    size: 20,
+                                  ),
+                                  suffixIcon: _addressController
+                                          .text.isNotEmpty
                                       ? IconButton(
-                                          icon: const Icon(Icons.clear_rounded),
+                                          icon: Icon(Icons.clear_rounded,
+                                              color: Colors.white
+                                                  .withOpacity(0.3),
+                                              size: 17),
                                           onPressed: () {
                                             _addressController.clear();
                                             setState(() {});
@@ -184,95 +282,153 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 textInputAction: TextInputAction.search,
                                 onFieldSubmitted: (_) => _analyze(),
                                 onChanged: (_) => setState(() {}),
-                                validator: ref.read(validationServiceProvider).validateAddress,
+                                validator: ref
+                                    .read(validationServiceProvider)
+                                    .validateAddress,
+                              ),
+                              const SizedBox(height: 14),
+
+                              // Analyze button
+                              FilledButton.icon(
+                                onPressed: _analyze,
+                                icon: const Icon(Icons.auto_awesome_rounded,
+                                    size: 17),
+                                label: const Text('Analyze Address'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ).animate(delay: 160.ms).fadeIn(duration: 500.ms),
+
+                    // ── Recent searches ────────────────────────────────────
+                    if (history.isNotEmpty) ...[
+                      const SizedBox(height: 40),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'RECENT',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.35),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.8,
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    onPressed: _analyze,
-                                    icon: const Icon(Icons.analytics_rounded),
-                                    label: const Text('Analyze Address'),
-                                  ),
+                            GestureDetector(
+                              onTap: () => ref
+                                  .read(searchHistoryProvider.notifier)
+                                  .clear(),
+                              child: Text(
+                                'Clear',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.35),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                const SizedBox(width: 12),
-                                OutlinedButton.icon(
-                                  onPressed: () => context.pushNamed('advanced-search'),
-                                  icon: const Icon(Icons.tune_rounded),
-                                  label: const Text('Advanced'),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
+                      ...history.take(6).map((entry) => _HistoryTile(
+                            entry: entry,
+                            onTap: () {
+                              _addressController.text =
+                                  entry.address.displayAddress;
+                              _analyze();
+                            },
+                            onRemove: () => ref
+                                .read(searchHistoryProvider.notifier)
+                                .remove(entry.id),
+                          )),
+                    ],
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
-                  // Recent searches
-                  if (history.isNotEmpty) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Recent Searches',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => ref.read(searchHistoryProvider.notifier).clear(),
-                          child: const Text('Clear'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ...history.take(5).map((entry) => _HistoryTile(
-                          entry: entry,
-                          onTap: () {
-                            _addressController.text = entry.address.displayAddress;
-                            _analyze();
-                          },
-                          onRemove: () => ref.read(searchHistoryProvider.notifier).remove(entry.id),
-                        )),
+                    // ── Dimension pills row ────────────────────────────────
+                    const _DimensionRow(),
+
+                    const SizedBox(height: 48),
                   ],
-
-                  // In-app landing experience (shown when no history)
-                  if (history.isEmpty) ...[
-                    const SizedBox(height: 8),
-                    _WhatWeDoCard()
-                        .animate(delay: 100.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.1, end: 0),
-                    const SizedBox(height: 20),
-                    _HowItWorksSection()
-                        .animate(delay: 200.ms)
-                        .fadeIn(duration: 400.ms),
-                    const SizedBox(height: 20),
-                    _WhatWeAnalyzeSection()
-                        .animate(delay: 300.ms)
-                        .fadeIn(duration: 400.ms),
-                  ],
-
-                  const SizedBox(height: 32),
-                ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  String _countryFlag(String code) {
-    final flags = {'PT': '🇵🇹', 'ES': '🇪🇸', 'GB': '🇬🇧', 'FR': '🇫🇷', 'DE': '🇩🇪'};
+  String _flag(String code) {
+    const flags = {
+      'PT': '🇵🇹',
+      'ES': '🇪🇸',
+      'GB': '🇬🇧',
+      'FR': '🇫🇷',
+      'DE': '🇩🇪',
+    };
     return flags[code] ?? '🌍';
   }
 }
+
+// ── Mini logo (7-segment donut) ───────────────────────────────────────────────
+
+class _Logo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    const size = 28.0;
+    const colors = [
+      Color(0xFF29B6F6), // transport
+      Color(0xFF66BB6A), // education
+      Color(0xFFEF5350), // healthcare
+      Color(0xFFFFA726), // shopping
+      Color(0xFFAB47BC), // safety
+      Color(0xFF8D6E63), // religion
+      Color(0xFF26C6DA), // recreation
+    ];
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _DonutPainter(colors)),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  final List<Color> colors;
+  _DonutPainter(this.colors);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const segments = 7;
+    const gapRad = 0.08;
+    const sweepRad = (2 * 3.14159265 / segments) - gapRad;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    for (int i = 0; i < segments; i++) {
+      final start = -1.5707963 + i * (2 * 3.14159265 / segments) + gapRad / 2;
+      canvas.drawArc(
+        rect.deflate(4),
+        start,
+        sweepRad,
+        false,
+        Paint()
+          ..color = colors[i]
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 4
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
+
+// ── History tile ──────────────────────────────────────────────────────────────
 
 class _HistoryTile extends StatelessWidget {
   final SearchHistoryEntry entry;
@@ -287,354 +443,135 @@ class _HistoryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final score = entry.score.overall.round();
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: ScoreBadge(score: score, size: 44),
-        title: Text(
-          entry.address.displayAddress,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: _kSurface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
         ),
-        subtitle: Text(
-          _timeAgo(entry.timestamp),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.close_rounded, size: 18),
-              onPressed: onRemove,
-            ),
-          ],
-        ),
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      ),
-    );
-  }
-
-  String _timeAgo(DateTime time) {
-    final diff = DateTime.now().difference(time);
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    return '${diff.inDays}d ago';
-  }
-}
-
-// ── What We Do ────────────────────────────────────────────────────────────────
-
-class _WhatWeDoCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primaryContainer.withOpacity(0.5),
-            theme.colorScheme.secondaryContainer.withOpacity(0.3),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
-        ),
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.home_work_rounded, color: theme.colorScheme.primary, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'What is HomeScope?',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'HomeScope helps you make smarter home-buying and renting decisions by scoring any address across what truly matters — transport links, schools, hospitals, shops, parks, and more.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.55,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'We pull real-time data from OpenStreetMap and combine it with AI-powered analysis to give you a clear, objective picture of life in that neighbourhood before you commit.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.55,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── How It Works ──────────────────────────────────────────────────────────────
-
-class _HowItWorksSection extends StatelessWidget {
-  static const _steps = [
-    (
-      icon: Icons.edit_location_alt_rounded,
-      color: Color(0xFF6C63FF),
-      title: 'Enter address',
-      body: 'Type any street address. HomeScope supports Portugal and is expanding to more countries.',
-    ),
-    (
-      icon: Icons.radar_rounded,
-      color: Color(0xFF00BCD4),
-      title: 'AI scans nearby',
-      body: 'We fetch 100+ amenities within 2 km and weigh them by distance, type, and your life profile.',
-    ),
-    (
-      icon: Icons.insights_rounded,
-      color: Color(0xFF4CAF50),
-      title: 'Get your score',
-      body: 'Receive a 0–100 location score, category breakdown, AI summary, and interactive maps.',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'How it works',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _steps.asMap().entries.map((e) {
-            final i = e.key;
-            final s = e.value;
-            return Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(right: i < _steps.length - 1 ? 10 : 0),
-                child: _StepCard(step: i + 1, icon: s.icon, color: s.color, title: s.title, body: s.body),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-class _StepCard extends StatelessWidget {
-  final int step;
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String body;
-
-  const _StepCard({
-    required this.step,
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.body,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 22),
-                ),
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '$step',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(title, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 6),
-            Text(body, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── What We Analyze ───────────────────────────────────────────────────────────
-
-class _WhatWeAnalyzeSection extends StatelessWidget {
-  static const _categories = [
-    (
-      icon: Icons.train_rounded,
-      label: 'Transportation',
-      color: Color(0xFF29B6F6),
-      description: 'Bus stops, metro stations, tram lines, and rail connections within walking distance. We measure frequency, coverage, and how easily you can get around without a car.',
-    ),
-    (
-      icon: Icons.school_rounded,
-      label: 'Education',
-      color: Color(0xFF66BB6A),
-      description: 'Nurseries, primary schools, secondary schools, universities, and public libraries. Weighted by proximity and variety — critical for families and lifelong learners alike.',
-    ),
-    (
-      icon: Icons.local_hospital_rounded,
-      label: 'Healthcare',
-      color: Color(0xFFEF5350),
-      description: 'Hospitals, health centres, clinics, pharmacies, and dentists nearby. We score access to emergency care separately from routine healthcare availability.',
-    ),
-    (
-      icon: Icons.shopping_bag_rounded,
-      label: 'Shopping',
-      color: Color(0xFFFFA726),
-      description: 'Supermarkets, convenience stores, markets, bakeries, and retail shops for everyday needs. Covers both daily essentials and weekly grocery runs.',
-    ),
-    (
-      icon: Icons.park_rounded,
-      label: 'Recreation',
-      color: Color(0xFF26C6DA),
-      description: 'Parks, gardens, gyms, sports pitches, cafés, restaurants, cinemas, and cultural venues. Measures how vibrant and liveable a neighbourhood feels day-to-day.',
-    ),
-    (
-      icon: Icons.shield_rounded,
-      label: 'Safety',
-      color: Color(0xFFAB47BC),
-      description: 'Proximity to police stations, fire brigades, and emergency services. Combined with neighbourhood density signals to estimate how safe and well-served the area is.',
-    ),
-    (
-      icon: Icons.church_rounded,
-      label: 'Religion',
-      color: Color(0xFF8D6E63),
-      description: 'Churches, mosques, synagogues, temples, and other places of worship. Scored for those for whom community and spiritual life are part of choosing a home.',
-    ),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'What we analyze',
-          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          '7 categories scored from real OpenStreetMap data',
-          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 12),
-        ..._categories.map((c) => _CategoryCard(
-              icon: c.icon,
-              label: c.label,
-              color: c.color,
-              description: c.description,
-            )),
-      ],
-    );
-  }
-}
-
-class _CategoryCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final String description;
-
-  const _CategoryCard({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.description,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 14),
+            ScoreBadge(score: score, size: 38),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
                   Text(
-                    description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.5,
+                    entry.address.displayAddress,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _timeAgo(entry.timestamp),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.35),
+                      fontSize: 11.5,
                     ),
                   ),
                 ],
               ),
             ),
+            IconButton(
+              icon: Icon(Icons.close_rounded,
+                  size: 15, color: Colors.white.withOpacity(0.25)),
+              onPressed: onRemove,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  String _timeAgo(DateTime t) {
+    final d = DateTime.now().difference(t);
+    if (d.inMinutes < 60) return '${d.inMinutes}m ago';
+    if (d.inHours < 24) return '${d.inHours}h ago';
+    return '${d.inDays}d ago';
+  }
+}
+
+// ── Dimension pills ───────────────────────────────────────────────────────────
+
+class _DimensionRow extends StatelessWidget {
+  const _DimensionRow();
+
+  static const _dims = [
+    (emoji: '🚇', label: 'Transport', color: Color(0xFF29B6F6)),
+    (emoji: '🎓', label: 'Schools',   color: Color(0xFF66BB6A)),
+    (emoji: '🏥', label: 'Health',    color: Color(0xFFEF5350)),
+    (emoji: '🛍', label: 'Shopping',  color: Color(0xFFFFA726)),
+    (emoji: '🛡', label: 'Safety',    color: Color(0xFFAB47BC)),
+    (emoji: '⛪', label: 'Community', color: Color(0xFF8D6E63)),
+    (emoji: '🌳', label: 'Parks',     color: Color(0xFF26C6DA)),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
+          child: Text(
+            '7 DIMENSIONS',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.32),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.8,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 72,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: _dims.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) {
+              final d = _dims[i];
+              return Container(
+                width: 72,
+                decoration: BoxDecoration(
+                  color: d.color.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: d.color.withOpacity(0.2)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(d.emoji, style: const TextStyle(fontSize: 20)),
+                    const SizedBox(height: 5),
+                    Text(
+                      d.label,
+                      style: TextStyle(
+                        color: d.color,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
