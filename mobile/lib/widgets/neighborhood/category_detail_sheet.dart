@@ -438,11 +438,9 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
           slivers: [
             SliverToBoxAdapter(child: _buildHandle()),
             SliverToBoxAdapter(child: _buildHeader()),
-            SliverToBoxAdapter(
-              child: widget.cat.id == 'transportation'
-                  ? _buildTransportDNA()
-                  : _buildScoreOverview(),
-            ),
+            SliverToBoxAdapter(child: _buildScoreOverview()),
+            if (widget.cat.id == 'transportation')
+              SliverToBoxAdapter(child: _buildTransportDNA()),
             SliverToBoxAdapter(child: _buildBreakdown()),
             SliverToBoxAdapter(child: _buildNearby()),
             if (widget.address?.lat != null && widget.address?.lng != null)
@@ -636,36 +634,140 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
 
   Widget _buildTransportDNA() {
     final subTypes = _subtypes.take(7).toList();
-    if (subTypes.isEmpty) return _buildScoreOverview();
+    if (subTypes.isEmpty) return const SizedBox.shrink();
 
     final groups = <String, List<AmenityModel>>{};
     for (final a in widget.amenities) {
       groups.putIfAbsent(a.type, () => []).add(a);
     }
 
+    // Pre-sort each group by distance so we can show the nearest stop name
+    final nearest = <String, AmenityModel?>{};
+    for (final st in subTypes) {
+      final list = [...(groups[st.type] ?? [])]
+        ..sort((a, b) => (a.distanceMeters ?? 99999).compareTo(b.distanceMeters ?? 99999));
+      nearest[st.type] = list.isEmpty ? null : list.first;
+    }
+
     return _Section(
       title: 'TRANSIT RADAR',
-      child: LayoutBuilder(
-        builder: (ctx, constraints) {
-          final size = constraints.maxWidth;
-          return TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 1600),
-            curve: Curves.easeOutCubic,
-            builder: (_, progress, __) => SizedBox(
-              width: size,
-              height: size,
-              child: CustomPaint(
-                painter: _TransportDNAPainter(
-                  subtypes: subTypes,
-                  amenityGroups: groups,
-                  baseColor: _color,
-                  animProgress: progress,
-                ),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Radar canvas — capped at 260 and centred ──
+          Center(
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                final size = min(constraints.maxWidth, 260.0);
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 1600),
+                  curve: Curves.easeOutCubic,
+                  builder: (_, progress, __) => SizedBox(
+                    width: size,
+                    height: size,
+                    child: CustomPaint(
+                      painter: _TransportDNAPainter(
+                        subtypes: subTypes,
+                        amenityGroups: groups,
+                        baseColor: _color,
+                        animProgress: progress,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Nearest stop per sub-type ──
+          Container(
+            decoration: BoxDecoration(
+              color: _kSurface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: _kBorder),
+            ),
+            child: Column(
+              children: List.generate(subTypes.length, (i) {
+                final st = subTypes[i];
+                final stColor = _kTransportColors[st.type] ?? _color;
+                final near = nearest[st.type];
+                final emoji = _subTypeEmoji[st.type] ?? '📍';
+                final label = _subTypeLabel[st.type] ?? _prettify(st.type);
+                return Column(
+                  children: [
+                    if (i > 0)
+                      Divider(height: 1, color: Colors.white.withOpacity(0.05)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      child: Row(
+                        children: [
+                          // emoji badge
+                          Container(
+                            width: 32, height: 32,
+                            decoration: BoxDecoration(
+                              color: stColor.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: Center(
+                              child: Text(emoji, style: const TextStyle(fontSize: 14)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: stColor,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (near != null)
+                                  Text(
+                                    near.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.55),
+                                      fontSize: 11.5,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (near?.distanceMeters != null) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: stColor.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                _dist(near!.distanceMeters),
+                                style: TextStyle(
+                                  color: stColor,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
       ),
     ).animate(delay: 80.ms).fadeIn(duration: 300.ms);
   }
