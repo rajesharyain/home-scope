@@ -15,11 +15,11 @@ import '../../widgets/common/loading_overlay.dart';
 import '../../widgets/home/score_badge.dart';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const _kBg       = Color(0xFF060B14);
-const _kSurface  = Color(0xFF0D1625);
-const _kSurface2 = Color(0xFF131F33);
-const _kAccent   = Color(0xFF3B82F6);
-const _kBorder   = Color(0xFF1A2845);
+const _kBg        = Color(0xFF060B14);
+const _kSurface   = Color(0xFF0D1625);
+const _kSurface2  = Color(0xFF131F33);
+const _kAccent    = Color(0xFF3B82F6);
+const _kBorder    = Color(0xFF1A2845);
 
 // ── Suggestion model ──────────────────────────────────────────────────────────
 
@@ -86,7 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onFocusChange() {
     if (!_focusNode.hasFocus) {
-      // Small delay so tap-on-suggestion fires before we hide the list
       Future.delayed(const Duration(milliseconds: 150), () {
         if (mounted) setState(() => _showSuggestions = false);
       });
@@ -147,7 +146,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       _showSuggestions = false;
     });
     _focusNode.unfocus();
-    _analyze();
   }
 
   Future<void> _analyze() async {
@@ -210,21 +208,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             borderRadius: BorderRadius.circular(14),
             borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
           ),
-          hintStyle:
-              TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 15),
+          hintStyle: TextStyle(
+            color: Colors.white.withOpacity(0.28),
+            fontSize: 14.5,
+            fontWeight: FontWeight.w400,
+          ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-        ),
-        filledButtonTheme: FilledButtonThemeData(
-          style: FilledButton.styleFrom(
-            backgroundColor: _kAccent,
-            foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(52),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-            textStyle: const TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w600, letterSpacing: -0.2),
-          ),
         ),
       ),
       child: Scaffold(
@@ -235,23 +225,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: CustomScrollView(
             controller: _scrollController,
             slivers: [
-              // ── Top bar ────────────────────────────────────────────────
+
+              // ── Top nav ──────────────────────────────────────────────────
               SliverPadding(
-                padding: EdgeInsets.only(top: top + 16),
+                padding: EdgeInsets.only(top: top + 14),
                 sliver: SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
                     child: Row(
                       children: [
                         _Logo(),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 9),
                         const Text(
                           'HomeScope',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            letterSpacing: -0.4,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Country selector
+                        GestureDetector(
+                          onTap: () =>
+                              ref.read(shellTabProvider.notifier).state = 2,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.08)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(_flag(country?.code ?? 'PT'),
+                                    style: const TextStyle(fontSize: 13)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  country?.code ?? 'PT',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.60),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                Icon(Icons.expand_more_rounded,
+                                    size: 14,
+                                    color: Colors.white.withOpacity(0.30)),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -260,141 +288,121 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
+              // ── Hero ─────────────────────────────────────────────────────
               SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Hero ─────────────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 36, 24, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Know your\nneighbourhood.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 40,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1.2,
-                              height: 1.08,
-                            ),
-                          )
-                              .animate()
-                              .fadeIn(duration: 500.ms)
-                              .slideY(begin: 0.08, end: 0),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Transport · Schools · Health · Safety · Shops · Parks',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.45),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.2,
-                            ),
-                          ).animate(delay: 80.ms).fadeIn(duration: 400.ms),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // ── Search card ───────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _kSurface,
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                              color: Colors.white.withOpacity(0.07)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _kAccent.withOpacity(0.08),
-                              blurRadius: 40,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 32, 22, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Move smarter.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -1.5,
+                          height: 1.06,
                         ),
-                        padding: const EdgeInsets.all(20),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Country chip
-                              GestureDetector(
-                                onTap: () => ref
-                                    .read(shellTabProvider.notifier)
-                                    .state = 2,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 7),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(
-                                        color: Colors.white.withOpacity(0.08)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        _flag(country?.code ?? 'PT'),
-                                        style: const TextStyle(fontSize: 14),
-                                      ),
-                                      const SizedBox(width: 7),
-                                      Text(
-                                        country?.name ?? 'Portugal',
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.6),
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 4),
-                                      Icon(Icons.expand_more_rounded,
-                                          size: 14,
-                                          color:
-                                              Colors.white.withOpacity(0.3)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 14),
+                      )
+                          .animate()
+                          .fadeIn(duration: 480.ms)
+                          .slideY(begin: 0.07, end: 0),
+                      ShaderMask(
+                        shaderCallback: (bounds) => const LinearGradient(
+                          colors: [Color(0xFF3B82F6), Color(0xFF7C3AED)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ).createShader(bounds),
+                        child: const Text(
+                          'Invest wiser.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 38,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1.5,
+                            height: 1.06,
+                          ),
+                        ),
+                      )
+                          .animate(delay: 55.ms)
+                          .fadeIn(duration: 480.ms)
+                          .slideY(begin: 0.07, end: 0),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Search any address to uncover what matters most—safety, schools, transport, lifestyle, and investment potential.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.40),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          height: 1.65,
+                          letterSpacing: -0.1,
+                        ),
+                      ).animate(delay: 110.ms).fadeIn(duration: 420.ms),
+                    ],
+                  ),
+                ),
+              ),
 
-                              // Address input
-                              TextFormField(
-                                controller: _addressController,
-                                focusNode: _focusNode,
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 15),
-                                decoration: InputDecoration(
-                                  hintText: 'e.g. Rua Augusta 150, Lisboa',
-                                  prefixIcon: _fetching
-                                      ? Padding(
-                                          padding: const EdgeInsets.all(14),
-                                          child: SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 1.8,
-                                              color: Colors.white
-                                                  .withOpacity(0.4),
-                                            ),
-                                          ),
-                                        )
-                                      : Icon(
-                                          Icons.search_rounded,
-                                          color: Colors.white.withOpacity(0.3),
-                                          size: 20,
+              // ── Search ───────────────────────────────────────────────────
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _kSurface,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: Colors.white.withOpacity(0.07)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _kAccent.withOpacity(0.08),
+                          blurRadius: 56,
+                          offset: const Offset(0, 14),
+                          spreadRadius: -10,
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(14),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          // Address field
+                          TextFormField(
+                            controller: _addressController,
+                            focusNode: _focusNode,
+                            style: const TextStyle(
+                                color: Colors.white, fontSize: 15),
+                            decoration: InputDecoration(
+                              hintText:
+                                  'Search an address, neighbourhood, or city...',
+                              prefixIcon: _fetching
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(14),
+                                      child: SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.8,
+                                          color:
+                                              Colors.white.withOpacity(0.35),
                                         ),
-                                  suffixIcon: _addressController.text.isNotEmpty
+                                      ),
+                                    )
+                                  : Icon(
+                                      Icons.search_rounded,
+                                      color: Colors.white.withOpacity(0.30),
+                                      size: 20,
+                                    ),
+                              suffixIcon:
+                                  _addressController.text.isNotEmpty
                                       ? IconButton(
-                                          icon: Icon(Icons.clear_rounded,
-                                              color: Colors.white
-                                                  .withOpacity(0.3),
-                                              size: 17),
+                                          icon: Icon(
+                                            Icons.clear_rounded,
+                                            color:
+                                                Colors.white.withOpacity(0.30),
+                                            size: 17,
+                                          ),
                                           onPressed: () {
                                             _addressController.clear();
                                             setState(() {
@@ -404,133 +412,134 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           },
                                         )
                                       : null,
-                                ),
-                                textInputAction: TextInputAction.search,
-                                onFieldSubmitted: (_) {
-                                  setState(() => _showSuggestions = false);
-                                  _analyze();
-                                },
-                                onChanged: (v) {
-                                  setState(() {});
-                                  _onChanged(v);
-                                },
-                                validator: ref
-                                    .read(validationServiceProvider)
-                                    .validateAddress,
-                              ),
-
-                              // ── Suggestion dropdown ───────────────────
-                              AnimatedSize(
-                                duration: const Duration(milliseconds: 200),
-                                curve: Curves.easeOut,
-                                child: _showSuggestions && _suggestions.isNotEmpty
-                                    ? Column(
-                                        children: [
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              color: _kSurface2,
-                                              borderRadius:
-                                                  BorderRadius.circular(14),
-                                              border: Border.all(
-                                                  color: _kBorder),
-                                            ),
-                                            child: Column(
-                                              children: [
-                                                for (int i = 0;
-                                                    i < _suggestions.length;
-                                                    i++) ...[
-                                                  if (i > 0)
-                                                    Divider(
-                                                      height: 1,
-                                                      color: Colors.white
-                                                          .withOpacity(0.05),
-                                                    ),
-                                                  _SuggestionTile(
-                                                    suggestion:
-                                                        _suggestions[i],
-                                                    onTap: () =>
-                                                        _pickSuggestion(
-                                                            _suggestions[i]),
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : const SizedBox.shrink(),
-                              ),
-
-                              const SizedBox(height: 14),
-
-                              // Scope It button
-                              FilledButton.icon(
-                                onPressed: _analyze,
-                                icon: const Icon(Icons.radar_rounded, size: 18),
-                                label: const Text('Scope It'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ).animate(delay: 160.ms).fadeIn(duration: 500.ms),
-
-                    // ── Recent searches ────────────────────────────────────
-                    if (history.isNotEmpty) ...[
-                      const SizedBox(height: 40),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'RECENT',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.35),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.8,
-                              ),
                             ),
-                            GestureDetector(
-                              onTap: () => ref
-                                  .read(searchHistoryProvider.notifier)
-                                  .clear(),
-                              child: Text(
-                                'Clear',
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.35),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      ...history.take(6).map((entry) => _HistoryTile(
-                            entry: entry,
-                            onTap: () {
-                              _addressController.text =
-                                  entry.address.displayAddress;
+                            textInputAction: TextInputAction.search,
+                            onFieldSubmitted: (_) {
+                              setState(() => _showSuggestions = false);
                               _analyze();
                             },
-                            onRemove: () => ref
-                                .read(searchHistoryProvider.notifier)
-                                .remove(entry.id),
-                          )),
-                    ],
+                            onChanged: (v) {
+                              setState(() {});
+                              _onChanged(v);
+                            },
+                            validator: ref
+                                .read(validationServiceProvider)
+                                .validateAddress,
+                          ),
 
-                    const SizedBox(height: 32),
+                          // Suggestion dropdown
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            child: _showSuggestions && _suggestions.isNotEmpty
+                                ? Column(
+                                    children: [
+                                      const SizedBox(height: 6),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          color: _kSurface2,
+                                          borderRadius:
+                                              BorderRadius.circular(14),
+                                          border: Border.all(color: _kBorder),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            for (int i = 0;
+                                                i < _suggestions.length;
+                                                i++) ...[
+                                              if (i > 0)
+                                                Divider(
+                                                  height: 1,
+                                                  color: Colors.white
+                                                      .withOpacity(0.05),
+                                                ),
+                                              _SuggestionTile(
+                                                suggestion: _suggestions[i],
+                                                onTap: () => _pickSuggestion(
+                                                    _suggestions[i]),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
 
-                    // ── Dimension pills ────────────────────────────────────
-                    const _DimensionRow(),
+                          const SizedBox(height: 12),
 
-                    const SizedBox(height: 48),
-                  ],
-                ),
+                          // Get Insights — gradient CTA
+                          _InsightsButton(
+                            onPressed: () {
+                              setState(() => _showSuggestions = false);
+                              _analyze();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ).animate(delay: 180.ms).fadeIn(duration: 480.ms),
               ),
+
+              // ── What we analyze ──────────────────────────────────────────
+              const SliverToBoxAdapter(child: SizedBox(height: 36)),
+              const SliverToBoxAdapter(child: _DimensionRow()),
+
+              // ── Recent searches ──────────────────────────────────────────
+              if (history.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 36, 22, 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'RECENT',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.32),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.8,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => ref
+                              .read(searchHistoryProvider.notifier)
+                              .clear(),
+                          child: Text(
+                            'Clear',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.32),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: history.take(6).map((entry) => _HistoryTile(
+                          entry: entry,
+                          onTap: () {
+                            _addressController.text =
+                                entry.address.displayAddress;
+                            setState(() {});
+                            _focusNode.unfocus();
+                          },
+                          onRemove: () => ref
+                              .read(searchHistoryProvider.notifier)
+                              .remove(entry.id),
+                        )).toList(),
+                  ),
+                ),
+              ],
+
+              const SliverToBoxAdapter(child: SizedBox(height: 52)),
             ],
           ),
         ),
@@ -547,6 +556,64 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       'DE': '🇩🇪',
     };
     return flags[code] ?? '🌍';
+  }
+}
+
+// ── Gradient CTA button ───────────────────────────────────────────────────────
+
+class _InsightsButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _InsightsButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.38),
+            blurRadius: 22,
+            offset: const Offset(0, 7),
+            spreadRadius: -4,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          splashColor: Colors.white.withOpacity(0.10),
+          highlightColor: Colors.white.withOpacity(0.05),
+          child: const Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.insights_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 9),
+                Text(
+                  'Get Insights',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -613,12 +680,12 @@ class _SuggestionTile extends StatelessWidget {
   }
 }
 
-// ── Mini logo (7-segment donut) ───────────────────────────────────────────────
+// ── Mini logo ─────────────────────────────────────────────────────────────────
 
 class _Logo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    const size = 28.0;
+    const size = 26.0;
     const colors = [
       Color(0xFF29B6F6),
       Color(0xFF66BB6A),
@@ -650,14 +717,14 @@ class _DonutPainter extends CustomPainter {
       final start =
           -1.5707963 + i * (2 * 3.14159265 / segments) + gapRad / 2;
       canvas.drawArc(
-        rect.deflate(4),
+        rect.deflate(3.5),
         start,
         sweepRad,
         false,
         Paint()
           ..color = colors[i]
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
+          ..strokeWidth = 3.5
           ..strokeCap = StrokeCap.round,
       );
     }
@@ -686,16 +753,16 @@ class _HistoryTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           color: _kSurface,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.white.withOpacity(0.06)),
         ),
         child: Row(
           children: [
-            ScoreBadge(score: score, size: 38),
+            ScoreBadge(score: score, size: 36),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -707,7 +774,7 @@ class _HistoryTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 13.5,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -715,7 +782,7 @@ class _HistoryTile extends StatelessWidget {
                   Text(
                     _timeAgo(entry.timestamp),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.35),
+                      color: Colors.white.withOpacity(0.32),
                       fontSize: 11.5,
                     ),
                   ),
@@ -724,7 +791,7 @@ class _HistoryTile extends StatelessWidget {
             ),
             IconButton(
               icon: Icon(Icons.close_rounded,
-                  size: 15, color: Colors.white.withOpacity(0.25)),
+                  size: 14, color: Colors.white.withOpacity(0.22)),
               onPressed: onRemove,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
@@ -743,19 +810,19 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-// ── Dimension pills ───────────────────────────────────────────────────────────
+// ── What we analyze ───────────────────────────────────────────────────────────
 
 class _DimensionRow extends StatelessWidget {
   const _DimensionRow();
 
   static const _dims = [
-    (emoji: '🚇', label: 'Transport', color: Color(0xFF29B6F6)),
-    (emoji: '🎓', label: 'Schools',   color: Color(0xFF66BB6A)),
-    (emoji: '🏥', label: 'Health',    color: Color(0xFFEF5350)),
-    (emoji: '🛍', label: 'Shopping',  color: Color(0xFFFFA726)),
-    (emoji: '🛡', label: 'Safety',    color: Color(0xFFAB47BC)),
-    (emoji: '⛪', label: 'Community', color: Color(0xFF8D6E63)),
-    (emoji: '🌳', label: 'Parks',     color: Color(0xFF26C6DA)),
+    (emoji: '🚇', label: 'Transport'),
+    (emoji: '🎓', label: 'Education'),
+    (emoji: '🏥', label: 'Health'),
+    (emoji: '🛡', label: 'Safety'),
+    (emoji: '🛍', label: 'Lifestyle'),
+    (emoji: '🌳', label: 'Nature'),
+    (emoji: '💼', label: 'Investment'),
   ];
 
   @override
@@ -764,44 +831,48 @@ class _DimensionRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 14),
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 11),
           child: Text(
-            '7 DIMENSIONS',
+            'WHAT WE ANALYZE',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.32),
-              fontSize: 11,
+              color: Colors.white.withOpacity(0.26),
+              fontSize: 10.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 1.8,
+              letterSpacing: 1.6,
             ),
           ),
         ),
         SizedBox(
-          height: 72,
+          height: 34,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 22),
             itemCount: _dims.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 7),
             itemBuilder: (_, i) {
               final d = _dims[i];
               return Container(
-                width: 72,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 11, vertical: 0),
                 decoration: BoxDecoration(
-                  color: d.color.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: d.color.withOpacity(0.2)),
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border:
+                      Border.all(color: Colors.white.withOpacity(0.07)),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(d.emoji, style: const TextStyle(fontSize: 20)),
-                    const SizedBox(height: 5),
+                    Text(d.emoji,
+                        style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 6),
                     Text(
                       d.label,
                       style: TextStyle(
-                        color: d.color,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withOpacity(0.48),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: -0.1,
                       ),
                     ),
                   ],
