@@ -3,8 +3,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../models/address_model.dart';
 import '../../models/amenity_model.dart';
 import '../../models/score_model.dart';
+import 'category_detail_sheet.dart';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const _kBg      = Color(0xFF060B14);
@@ -75,11 +77,13 @@ String _dist(int? m) {
 
 class DashboardWidget extends StatelessWidget {
   final AnalysisResult result;
+  final AddressModel? address;
   final double topPadding;
 
   const DashboardWidget({
     super.key,
     required this.result,
+    this.address,
     this.topPadding = 0,
   });
 
@@ -124,10 +128,18 @@ class DashboardWidget extends StatelessWidget {
               final meta = _catMeta[cat.id];
               return Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                child: _CategoryCard(
-                  cat: cat,
-                  color: meta?.color ?? const Color(0xFF3B82F6),
-                  icon: meta?.icon ?? Icons.place_rounded,
+                child: GestureDetector(
+                  onTap: () => showCategoryDetail(
+                    context: context,
+                    cat: cat,
+                    allAmenities: result.amenities,
+                    address: address,
+                  ),
+                  child: _CategoryCard(
+                    cat: cat,
+                    color: meta?.color ?? const Color(0xFF3B82F6),
+                    icon: meta?.icon ?? Icons.place_rounded,
+                  ),
                 ),
               )
                   .animate(delay: (i * 55).ms)

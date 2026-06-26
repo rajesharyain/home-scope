@@ -69,7 +69,7 @@ class _NeighborhoodScreenState extends ConsumerState<NeighborhoodScreen> {
   Widget _buildContent(AnalysisResult result, AddressModel? address) {
     switch (_tab) {
       case 0:
-        return DashboardWidget(result: result, topPadding: 0);
+        return DashboardWidget(result: result, address: address, topPadding: 0);
       case 1:
         return const MapTabBody();
       case 2:
