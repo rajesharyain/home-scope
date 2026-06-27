@@ -28,6 +28,7 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
   late final Animation<double> _anim;
   AmenityCategory? _filter;
   AmenityModel? _tapped;
+  final _paintKey = GlobalKey();
 
   static const _catColors = {
     AmenityCategory.transportation: Color(0xFF29B6F6),
@@ -161,8 +162,9 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
             child: AnimatedBuilder(
               animation: _anim,
               builder: (_, __) => GestureDetector(
-                onTapUp: (d) => _onTap(d.localPosition, context),
+                onTapUp: (d) => _onTap(d.localPosition),
                 child: CustomPaint(
+                  key: _paintKey,
                   painter: _RadialPainter(
                     amenities: _visible,
                     addressLat: widget.addressLat,
@@ -198,8 +200,10 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
     );
   }
 
-  void _onTap(Offset pos, BuildContext context) {
-    final box = context.findRenderObject() as RenderBox?;
+  void _onTap(Offset pos) {
+    // Use the CustomPaint's own render box so pos and center share the same
+    // coordinate space. Using the parent build context gave the wrong size.
+    final box = _paintKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
     final size = box.size;
     final center = Offset(size.width / 2, size.height / 2);
@@ -213,7 +217,7 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
       final pt = _amenityOffset(a, center, maxR, maxDist);
       if (pt == null) continue;
       final d = (pt - pos).distance;
-      if (d < 18 && d < nearestDist) {
+      if (d < 24 && d < nearestDist) {
         nearestDist = d;
         nearest = a;
       }
@@ -225,7 +229,8 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
   Offset? _amenityOffset(AmenityModel a, Offset center, double maxR, double maxDist) {
     final dist = a.distanceMeters?.toDouble() ?? 0;
     if (dist <= 0) return null;
-    final r = (dist / maxDist) * maxR;
+    // Clamp matches _RadialPainter._offsetFor so hit positions are identical
+    final r = (dist / maxDist).clamp(0.0, 1.0) * maxR;
 
     if (widget.addressLat != null && widget.addressLng != null && a.lat != 0 && a.lng != 0) {
       final dLat = a.lat - widget.addressLat!;
@@ -234,9 +239,9 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
       return Offset(center.dx + r * sin(angle), center.dy - r * cos(angle));
     }
 
-    // Fallback: distribute by index
-    final idx = widget.amenities.indexOf(a);
-    final angle = (2 * pi / widget.amenities.length) * idx;
+    // Fallback: use _visible list (same as painter) to keep indices in sync
+    final idx = _visible.indexOf(a);
+    final angle = (2 * pi / _visible.length) * idx;
     return Offset(center.dx + r * cos(angle), center.dy + r * sin(angle));
   }
 }
