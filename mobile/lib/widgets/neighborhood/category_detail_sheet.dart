@@ -1923,9 +1923,7 @@ class _TransitRadarSectionState extends State<_TransitRadarSection> {
   // ── 2. Radar hero (full-width, large) ──────────────────────────────────────
 
   Widget _radarHero() {
-    if (widget.amenities.isEmpty) return const SizedBox.shrink();
-    final homeLat = widget.address?.lat;
-    final homeLng = widget.address?.lng;
+    if (widget.subtypes.isEmpty) return const SizedBox.shrink();
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF060C19),
@@ -1933,18 +1931,21 @@ class _TransitRadarSectionState extends State<_TransitRadarSection> {
         border: Border.all(color: _kBorder),
       ),
       padding: const EdgeInsets.all(12),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.0, end: 1.0),
-          duration: const Duration(milliseconds: 1400),
-          curve: Curves.easeOutCubic,
-          builder: (_, v, __) => CustomPaint(
-            painter: _TransportDNARadarPainter(
-              amenities: widget.amenities,
-              homeLat: homeLat,
-              homeLng: homeLng,
-              animValue: v,
+      child: Center(
+        child: SizedBox(
+          height: 220,
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 1400),
+              curve: Curves.elasticOut,
+              builder: (_, v, __) => CustomPaint(
+                painter: _TransportDNARadarPainter(
+                  subtypes: widget.subtypes,
+                  animValue: v,
+                ),
+              ),
             ),
           ),
         ),
@@ -2136,158 +2137,103 @@ class _TransitRadarSectionState extends State<_TransitRadarSection> {
 
 // ── Transport DNA spoke radar painter (premium) ───────────────────────────────
 
-// Positions each transit stop at its real compass bearing + distance from home.
-// Rings = walk-time bands. Compass rose gives N/E/S/W orientation.
 class _TransportDNARadarPainter extends CustomPainter {
-  final List<AmenityModel> amenities;
-  final double? homeLat;
-  final double? homeLng;
+  final List<_SubType> subtypes;
   final double animValue;
 
-  static const _maxM = 2000.0;
-  static const _ringM = [400.0, 800.0, 1200.0, 2000.0];
-  static const _ringLabel = ['5 min', '10 min', '15 min', '25 min'];
-
   const _TransportDNARadarPainter({
-    required this.amenities,
+    required this.subtypes,
     required this.animValue,
-    this.homeLat,
-    this.homeLng,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final c = Offset(cx, cy);
-    final maxR = cx * 0.82;
-    final anim = animValue.clamp(0.0, 1.0);
-    final tp = TextPainter(textDirection: TextDirection.ltr);
+    final c = Offset(size.width / 2, size.height / 2);
+    final maxR = size.width / 2 * 0.80;
+    final visible = subtypes.take(8).toList();
+    final n = visible.length;
 
-    // ── Background ────────────────────────────────────────────────────────────
-    canvas.drawCircle(c, cx, Paint()..color = const Color(0xFF060C19));
+    canvas.drawCircle(c, size.width / 2, Paint()..color = const Color(0xFF060C19));
 
-    // ── Compass cross lines (N-S and E-W axes, very faint) ───────────────────
-    final axisPaint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
-      ..strokeWidth = 0.7;
-    canvas.drawLine(Offset(cx, cy - maxR), Offset(cx, cy + maxR), axisPaint);
-    canvas.drawLine(Offset(cx - maxR, cy), Offset(cx + maxR, cy), axisPaint);
+    for (int r = 1; r <= 4; r++) {
+      canvas.drawCircle(c, maxR * r / 4,
+          Paint()
+            ..color = Colors.white.withOpacity(r == 4 ? 0.10 : 0.04)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = r == 4 ? 1.0 : 0.7);
+    }
 
-    // ── Walk-time rings ───────────────────────────────────────────────────────
-    for (int i = 0; i < _ringM.length; i++) {
-      final r = (_ringM[i] / _maxM) * maxR;
-      final isOuter = i == _ringM.length - 1;
-      canvas.drawCircle(
-        c, r,
-        Paint()
-          ..color = Colors.white.withOpacity(isOuter ? 0.11 : 0.05)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = isOuter ? 1.0 : 0.7,
-      );
-      // Ring label fades in after first half of animation
-      if (anim > 0.45) {
-        final labelAlpha = ((anim - 0.45) / 0.55).clamp(0.0, 1.0);
-        tp.text = TextSpan(
-          text: _ringLabel[i],
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.18 * labelAlpha),
-            fontSize: 8,
-          ),
-        );
-        tp.layout();
-        // Place label just inside the ring, slightly right of north
-        tp.paint(canvas, Offset(cx + 4, cy - r + 3));
+    if (n > 0) {
+      for (int i = 0; i < n; i++) {
+        final a = (2 * pi / n) * i - pi / 2;
+        canvas.drawLine(c, Offset(c.dx + maxR * cos(a), c.dy + maxR * sin(a)),
+            Paint()..color = Colors.white.withOpacity(0.04)..strokeWidth = 0.8);
       }
     }
 
-    // ── Compass rose labels ───────────────────────────────────────────────────
-    if (anim > 0.35) {
-      final compassAlpha = ((anim - 0.35) / 0.65).clamp(0.0, 1.0);
-      for (final (label, dx, dy) in [
-        ('N', 0.0, -1.0), ('S', 0.0, 1.0),
-        ('E', 1.0, 0.0),  ('W', -1.0, 0.0),
-      ]) {
-        tp.text = TextSpan(
-          text: label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.30 * compassAlpha),
-            fontSize: 9.5,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        );
-        tp.layout();
-        tp.paint(canvas, Offset(
-          cx + (maxR + 11) * dx - tp.width / 2,
-          cy + (maxR + 11) * dy - tp.height / 2,
-        ));
-      }
-    }
+    _drawHomeIcon(canvas, c, animValue.clamp(0.0, 1.0));
 
-    // ── Transit stop nodes at real geographic positions ───────────────────────
-    // Limit to 25 nearest stops to avoid clutter
-    final visible = amenities
-        .where((a) => (a.distanceMeters ?? 99999) <= _maxM * 1.05)
-        .take(25)
-        .toList();
+    if (animValue <= 0.01 || n == 0) return;
 
-    for (final a in visible) {
-      final dist = (a.distanceMeters?.toDouble() ?? 500.0).clamp(10.0, _maxM);
-      final r = (dist / _maxM) * maxR;
-      final color = _kTransportColors[a.type] ?? const Color(0xFF3B82F6);
+    final maxScore = visible.map((s) => s.score).reduce(max);
 
-      // Geographic bearing → canvas position (north = up)
-      final Offset pos;
-      if (homeLat != null && homeLng != null) {
-        final dLat = a.lat - homeLat!;
-        final dLng = (a.lng - homeLng!) * cos(homeLat! * pi / 180);
-        final bearing = atan2(dLng, dLat);
-        final animR = r * anim;
-        pos = Offset(cx + animR * sin(bearing), cy - animR * cos(bearing));
-      } else {
-        // Fallback when no GPS: even distribution by type
-        final idx = visible.indexOf(a);
-        final angle = (2 * pi / visible.length) * idx - pi / 2;
-        pos = Offset(cx + r * anim * cos(angle), cy + r * anim * sin(angle));
-      }
+    for (int i = 0; i < n; i++) {
+      final angle = (2 * pi / n) * i - pi / 2;
+      final st = visible[i];
+      final normalized = maxScore > 0 ? st.score / maxScore : 0.0;
+      final r = maxR * normalized * animValue;
+      final tip = Offset(c.dx + r * cos(angle), c.dy + r * sin(angle));
+      final color = _kTransportColors[st.type] ?? const Color(0xFF3B82F6);
 
-      // Node layers: outer halo → inner glow → fill → highlight ring
-      canvas.drawCircle(pos, 16, Paint()..color = color.withOpacity(0.08 * anim));
-      canvas.drawCircle(pos, 10, Paint()..color = color.withOpacity(0.18 * anim));
-      canvas.drawCircle(pos, 7,  Paint()..color = color.withOpacity(0.92 * anim));
-      canvas.drawCircle(
-        pos, 7,
-        Paint()
-          ..color = Colors.white.withOpacity(0.20)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0,
-      );
+      canvas.drawLine(c, tip,
+          Paint()
+            ..color = color.withOpacity(0.38 * animValue)
+            ..strokeWidth = 1.5
+            ..strokeCap = StrokeCap.round);
 
-      // Emoji on node
-      final emoji = _subTypeEmoji[a.type] ?? '🚌';
+      canvas.drawCircle(tip, 20, Paint()..color = color.withOpacity(0.07 * animValue));
+      canvas.drawCircle(tip, 14, Paint()..color = color.withOpacity(0.14 * animValue));
+      canvas.drawCircle(tip, 11, Paint()..color = color.withOpacity(0.90 * animValue));
+      canvas.drawCircle(tip, 11,
+          Paint()
+            ..color = Colors.white.withOpacity(0.16)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0);
+
+      final emoji = _subTypeEmoji[st.type] ?? '🚌';
       final ep = TextPainter(textDirection: TextDirection.ltr)
-        ..text = TextSpan(text: emoji, style: const TextStyle(fontSize: 8))
+        ..text = TextSpan(text: emoji, style: const TextStyle(fontSize: 10))
         ..layout();
-      ep.paint(canvas, Offset(pos.dx - ep.width / 2, pos.dy - ep.height / 2));
-    }
+      ep.paint(canvas, Offset(tip.dx - ep.width / 2, tip.dy - ep.height / 2));
 
-    // ── Home icon last — always on top ────────────────────────────────────────
-    _drawHomeIcon(canvas, c, anim);
+      if (animValue > 0.60) {
+        final alpha = ((animValue - 0.60) / 0.40).clamp(0.0, 1.0);
+        final lp = TextPainter(textDirection: TextDirection.ltr)
+          ..text = TextSpan(
+              text: '×${st.count}',
+              style: TextStyle(
+                  color: color.withOpacity(0.80 * alpha),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700))
+          ..layout();
+        final labelR = r + 20;
+        lp.paint(canvas,
+            Offset(c.dx + labelR * cos(angle) - lp.width / 2,
+                c.dy + labelR * sin(angle) - lp.height / 2));
+      }
+    }
   }
 
   void _drawHomeIcon(Canvas canvas, Offset c, double alpha) {
     canvas.drawCircle(c, 28,
-        Paint()..color = const Color(0xFF6C63FF).withOpacity(0.06 * alpha));
+        Paint()..color = const Color(0xFF6C63FF).withOpacity(0.05 * alpha));
     canvas.drawCircle(c, 20,
-        Paint()..color = const Color(0xFF6C63FF).withOpacity(0.13 * alpha));
-    canvas.drawCircle(
-      c, 20,
-      Paint()
-        ..color = const Color(0xFF6C63FF).withOpacity(0.70 * alpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
+        Paint()..color = const Color(0xFF6C63FF).withOpacity(0.12 * alpha));
+    canvas.drawCircle(c, 20,
+        Paint()
+          ..color = const Color(0xFF6C63FF).withOpacity(0.65 * alpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5);
     canvas.drawCircle(c, 12,
         Paint()..color = const Color(0xFF6C63FF).withOpacity(alpha));
 
