@@ -371,6 +371,7 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
   late final List<_SubType> _subtypes;
   late final List<int> _distBands; // count per band: 0-200, 200-500, 500-1k, 1-2k, >2k
   late final List<double> _curve;  // relative score per distance band
+  bool _showAllNearby = false;
 
   @override
   void initState() {
@@ -794,17 +795,23 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
   Widget _buildNearby() {
     final isTransport = widget.cat.id == 'transportation';
     final limit = isTransport ? 8 : 6;
-    final top = widget.amenities.take(limit).toList();
+    final hasMore = widget.amenities.length > limit;
+    final top = (_showAllNearby ? widget.amenities : widget.amenities.take(limit)).toList();
     if (top.isEmpty) return const SizedBox.shrink();
     final color = _color;
     final icon = _catIcon[widget.cat.id] ?? Icons.place_rounded;
 
     return _Section(
       title: isTransport ? 'NEARBY STOPS' : 'NEARBY PLACES',
-      trailing: widget.amenities.length > limit
-          ? Text(
-              'View all ${widget.amenities.length}',
-              style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+      trailing: hasMore
+          ? GestureDetector(
+              onTap: () => setState(() => _showAllNearby = !_showAllNearby),
+              child: Text(
+                _showAllNearby
+                    ? 'Show less'
+                    : 'View all ${widget.amenities.length}',
+                style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
             )
           : null,
       child: Container(
