@@ -69,7 +69,7 @@ class _BottomNav extends StatelessWidget {
               onTap: () => onTap(i),
               behavior: HitTestBehavior.opaque,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

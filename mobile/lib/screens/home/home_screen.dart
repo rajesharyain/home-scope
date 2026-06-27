@@ -209,12 +209,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             borderSide: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
           ),
           hintStyle: TextStyle(
-            color: Colors.white.withOpacity(0.28),
+            color: Colors.white.withOpacity(0.40),
             fontSize: 14.5,
             fontWeight: FontWeight.w400,
           ),
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         ),
       ),
       child: Scaffold(
@@ -228,7 +228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
               // ── Top nav ──────────────────────────────────────────────────
               SliverPadding(
-                padding: EdgeInsets.only(top: top + 14),
+                padding: EdgeInsets.only(top: top + 8),
                 sliver: SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -291,7 +291,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Hero ─────────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 32, 22, 0),
+                  padding: const EdgeInsets.fromLTRB(22, 20, 22, 0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -299,10 +299,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         'Move smarter.',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 38,
+                          fontSize: 34,
                           fontWeight: FontWeight.w800,
-                          letterSpacing: -1.5,
-                          height: 1.06,
+                          letterSpacing: -1.2,
+                          height: 1.08,
                         ),
                       )
                           .animate()
@@ -318,26 +318,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           'Invest wiser.',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 38,
+                            fontSize: 34,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: -1.5,
-                            height: 1.06,
+                            letterSpacing: -1.2,
+                            height: 1.08,
                           ),
                         ),
                       )
                           .animate(delay: 55.ms)
                           .fadeIn(duration: 480.ms)
                           .slideY(begin: 0.07, end: 0),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       Text(
-                        'Search any address to uncover what matters most—safety, schools, transport, lifestyle, and investment potential.',
+                        'Uncover safety, schools, transport & investment potential for any address.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.40),
+                          color: Colors.white.withOpacity(0.50),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,
-                          height: 1.65,
+                          height: 1.55,
                           letterSpacing: -0.1,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ).animate(delay: 110.ms).fadeIn(duration: 420.ms),
                     ],
                   ),
@@ -347,22 +349,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── Search ───────────────────────────────────────────────────
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
                   child: Container(
                     decoration: BoxDecoration(
                       color: _kSurface,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.white.withOpacity(0.07)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.08)),
                       boxShadow: [
                         BoxShadow(
-                          color: _kAccent.withOpacity(0.08),
-                          blurRadius: 56,
-                          offset: const Offset(0, 14),
-                          spreadRadius: -10,
+                          color: _kAccent.withOpacity(0.10),
+                          blurRadius: 40,
+                          offset: const Offset(0, 10),
+                          spreadRadius: -8,
                         ),
                       ],
                     ),
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -484,7 +486,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
               // ── What we analyze ──────────────────────────────────────────
-              const SliverToBoxAdapter(child: SizedBox(height: 36)),
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
               const SliverToBoxAdapter(child: _DimensionRow()),
 
               // ── Recent searches ──────────────────────────────────────────
@@ -831,11 +833,11 @@ class _DimensionRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
           child: Text(
             'WHAT WE ANALYZE',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.26),
+              color: Colors.white.withValues(alpha: 0.38),
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.6,
@@ -844,14 +846,36 @@ class _DimensionRow extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: GridView.count(
-            crossAxisCount: 4,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 0.82,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            children: _dims.map((d) => _DimCard(d: d)).toList(),
+          child: LayoutBuilder(
+            builder: (_, constraints) {
+              const gap = 9.0;
+              final cardW = (constraints.maxWidth - gap * 3) / 4;
+              final cardH = cardW / 0.82;
+              Widget card(int i) => SizedBox(
+                    width: cardW,
+                    height: cardH,
+                    child: _DimCard(d: _dims[i]),
+                  );
+              return Column(
+                children: [
+                  // Row 1 — 4 cards
+                  Row(children: [
+                    for (int i = 0; i < 4; i++) ...[
+                      if (i > 0) const SizedBox(width: gap),
+                      card(i),
+                    ],
+                  ]),
+                  const SizedBox(height: gap),
+                  // Row 2 — 3 cards centred
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    for (int i = 4; i < 7; i++) ...[
+                      if (i > 4) const SizedBox(width: gap),
+                      card(i),
+                    ],
+                  ]),
+                ],
+              );
+            },
           ),
         ),
       ],
