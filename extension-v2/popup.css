@@ -2210,3 +2210,90 @@ html, body {
   border-top: 1px solid var(--border);
 }
 
+/* ── Nearby Transport Panel ───────────────────────────────────────────────── */
+.tr-panel {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0 4px;
+  align-items: flex-start;
+}
+.tr-cards {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.tr-cards::-webkit-scrollbar { width: 3px; }
+.tr-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.tr-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tr-card:hover { background: rgba(255,255,255,0.04); }
+.tr-card--selected {
+  background: color-mix(in srgb, var(--tc) 7%, transparent);
+  border-left-color: var(--tc);
+}
+.tr-card-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.tr-card--selected .tr-card-icon {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--tc) 30%, transparent);
+}
+.tr-card-info { flex: 1; min-width: 0; }
+.tr-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tr-card-meta {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.tr-card-walk { color: var(--text3); }
+.tr-route-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.tr-route-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid;
+  letter-spacing: 0.2px;
+}
+.tr-radar-wrap {
+  flex-shrink: 0;
+  width: 160px;
+  height: 160px;
+}
+.tr-radar-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: #0A1628;
+}
+

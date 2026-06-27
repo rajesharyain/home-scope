@@ -4,7 +4,7 @@
 const listeners = {};
 
 const state = {
-  screen: 'home',       // home | loading | results | history | settings
+  screen: 'home',       // home | loading | results | history | settings | explorer | docs | tutorial
   niTab: 'dna',         // dna | life-radius | time-machine | ai-story | future-score
   resultsView: 'dashboard', // dashboard | neighborhood
   analysisStatus: 'idle',   // idle | loading | done | error

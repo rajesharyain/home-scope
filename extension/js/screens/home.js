@@ -16,6 +16,11 @@ function homeHTML() {
 
       <!-- Minimal nav – no brand, just utility icons -->
       <div class="home-topbar">
+        <button id="btn-nav-explore" class="home-nav-btn" title="Explore neighbourhoods">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+          </svg>
+        </button>
         <button id="btn-nav-history" class="home-nav-btn" title="Recent searches">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -53,7 +58,7 @@ function homeHTML() {
             <span class="home-logo-tag">7 Dimensions · AI · Real-time</span>
           </div>
         </div>
-        <h1 class="home-headline">Understand any<br>address with AI.</h1>
+        <h1 class="home-headline">Move smarter.<br><span class="home-headline-gradient">Invest wiser.</span></h1>
         <p class="home-sub">7 dimensions · AI narrative · Real-time data</p>
       </div>
 
@@ -180,71 +185,18 @@ function homeHTML() {
         <div class="hm-headline">The 7 dimensions</div>
         <p class="hm-sub">Every address is scored across seven aspects of daily life. Together they give you a complete picture — no guesswork.</p>
 
-        <div class="hm-dimensions">
-
-          <div class="hm-dim" style="--dc:#3B82F6">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🚇</span>
-              <span class="hm-dim-name">Transportation</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Bus stops, metro, train and tram lines, cycling paths. A high score means genuine freedom from car dependency.</div>
+        <div class="hm-dim-grid">
+          <div class="hm-dim-row">
+            <div class="hm-dim-card" style="--dc:#3B82F6"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🚇</span><span class="hm-dim-card-label">Transport</span></div>
+            <div class="hm-dim-card" style="--dc:#8B5CF6"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🎓</span><span class="hm-dim-card-label">Education</span></div>
+            <div class="hm-dim-card" style="--dc:#EF4444"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🏥</span><span class="hm-dim-card-label">Health</span></div>
+            <div class="hm-dim-card" style="--dc:#F59E0B"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🛡</span><span class="hm-dim-card-label">Safety</span></div>
           </div>
-
-          <div class="hm-dim" style="--dc:#8B5CF6">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🎓</span>
-              <span class="hm-dim-name">Education</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Nurseries, primary and secondary schools, universities and libraries. Critical for families — and a proven driver of property values.</div>
+          <div class="hm-dim-row hm-dim-row-center">
+            <div class="hm-dim-card" style="--dc:#10B981"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🛍</span><span class="hm-dim-card-label">Lifestyle</span></div>
+            <div class="hm-dim-card" style="--dc:#06B6D4"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">🌳</span><span class="hm-dim-card-label">Nature</span></div>
+            <div class="hm-dim-card" style="--dc:#6C63FF"><div class="hm-dim-card-bar"></div><span class="hm-dim-card-emoji">💼</span><span class="hm-dim-card-label">Investment</span></div>
           </div>
-
-          <div class="hm-dim" style="--dc:#EF4444">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🏥</span>
-              <span class="hm-dim-name">Healthcare</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Hospitals, GP clinics, pharmacies and dentists. Access to care matters most when you need it most — in an emergency.</div>
-          </div>
-
-          <div class="hm-dim" style="--dc:#F59E0B">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🛍</span>
-              <span class="hm-dim-name">Shopping</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Supermarkets, local markets, convenience stores. The difference between a 5-minute walk and a 20-minute drive for your weekly shop.</div>
-          </div>
-
-          <div class="hm-dim" style="--dc:#10B981">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🛡</span>
-              <span class="hm-dim-name">Safety</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Police stations, fire services and emergency access. A proxy for response quality and the security infrastructure of the neighbourhood.</div>
-          </div>
-
-          <div class="hm-dim" style="--dc:#06B6D4">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🤝</span>
-              <span class="hm-dim-name">Community</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Community centres, places of worship, cultural and social spaces. The social fabric that makes a neighbourhood feel alive, not just convenient.</div>
-          </div>
-
-          <div class="hm-dim" style="--dc:#22C55E">
-            <div class="hm-dim-top">
-              <span class="hm-dim-emoji">🌳</span>
-              <span class="hm-dim-name">Recreation</span>
-              <span class="hm-dim-dot"></span>
-            </div>
-            <div class="hm-dim-desc">Parks, sports facilities, gyms and green spaces. Quality of life beyond the front door — space to breathe, move and decompress.</div>
-          </div>
-
         </div>
 
         <div class="hm-divider"></div>
@@ -301,7 +253,8 @@ function bindHome(container) {
   const addrError    = container.querySelector('#address-error');
   const profileChips = container.querySelectorAll('.chip[data-profile]');
 
-  // Nav icons (now live inside the home screen, not the topbar)
+  // Nav icons
+  container.querySelector('#btn-nav-explore')?.addEventListener('click', () => setState({ screen: 'explorer' }));
   container.querySelector('#btn-nav-history')?.addEventListener('click', () => setState({ screen: 'history' }));
   container.querySelector('#btn-nav-settings')?.addEventListener('click', () => setState({ screen: 'settings' }));
 

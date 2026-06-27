@@ -167,13 +167,15 @@ function _renderDNAExplained(container, result) {
       .sort((a, b) => a.distance_meters - b.distance_meters)
       .slice(0, 3);
 
-    const poisHTML = nearby.length ? nearby.map(a => `
-      <div class="dna-exp-poi">
-        <span class="dna-exp-poi-name">${_escDNA(a.name || a.type || 'Place')}</span>
-        <span class="dna-exp-poi-dist" style="color:${color}">${a.distance_meters}m</span>
-        <span class="dna-exp-poi-walk">${a.walking_minutes != null ? a.walking_minutes + ' min' : '—'}</span>
-      </div>`).join('')
-      : '<div class="dna-exp-none">No nearby data available</div>';
+    const poisHTML = catId === 'transportation'
+      ? _buildTransportNearbyHTML(amenities, color)
+      : (nearby.length ? nearby.map(a => `
+          <div class="dna-exp-poi">
+            <span class="dna-exp-poi-name">${_escDNA(a.name || a.type || 'Place')}</span>
+            <span class="dna-exp-poi-dist" style="color:${color}">${a.distance_meters}m</span>
+            <span class="dna-exp-poi-walk">${a.walking_minutes != null ? a.walking_minutes + ' min' : '—'}</span>
+          </div>`).join('')
+        : '<div class="dna-exp-none">No nearby data available</div>');
 
     return `
       <div class="dna-exp-card" data-cat="${catId}">
@@ -206,6 +208,20 @@ function _renderDNAExplained(container, result) {
       const body = card.querySelector('.dna-exp-body');
       const isOpen = card.classList.toggle('open');
       body.style.display = isOpen ? 'block' : 'none';
+
+      // Initialize transport radar on first open
+      if (isOpen && card.dataset.cat === 'transportation') {
+        const canvas = body.querySelector('.tr-radar-canvas');
+        if (canvas && !canvas.dataset.initialized) {
+          canvas.dataset.initialized = '1';
+          const transportItems = amenities
+            .filter(a => a.category === 'transportation')
+            .sort((a, b) => a.distance_meters - b.distance_meters)
+            .slice(0, 8);
+          _drawTransportRadar(canvas, transportItems);
+          _bindTransportCards(body, transportItems, canvas);
+        }
+      }
     });
   });
 }
@@ -216,6 +232,250 @@ function _escDNA(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ── Transport constants ────────────────────────────────────────────────────────
+
+const _TR_COLORS = {
+  subway_entrance: '#8B5CF6',
+  bus_stop:        '#3B82F6',
+  station:         '#22C55E',
+  taxi:            '#F59E0B',
+  bicycle_rental:  '#06B6D4',
+  tram_stop:       '#EC4899',
+  ferry_terminal:  '#14B8A6',
+  parking:         '#64748B',
+};
+
+const _TR_EMOJI = {
+  subway_entrance: '🚇',
+  bus_stop:        '🚌',
+  station:         '🚆',
+  taxi:            '🚕',
+  bicycle_rental:  '🚲',
+  tram_stop:       '🚃',
+  ferry_terminal:  '⛴',
+  parking:         '🅿️',
+};
+
+// ── Build transport nearby HTML ────────────────────────────────────────────────
+
+function _buildTransportNearbyHTML(allAmenities, baseColor) {
+  const items = allAmenities
+    .filter(a => a.category === 'transportation')
+    .sort((a, b) => a.distance_meters - b.distance_meters)
+    .slice(0, 8);
+
+  if (!items.length) return '<div class="dna-exp-none">No transport data available</div>';
+
+  const cards = items.map((a, i) => {
+    const tc   = _TR_COLORS[a.type] || baseColor;
+    const emoji = _TR_EMOJI[a.type] || '🚌';
+    const dist = a.distance_meters < 1000
+      ? `${a.distance_meters}m`
+      : `${(a.distance_meters / 1000).toFixed(1)}km`;
+    const walk = a.walking_minutes != null ? `· ${a.walking_minutes} min walk` : '';
+    const refs = (a.tags?.ref || '').split(/[;,/]/).map(s => s.trim()).filter(Boolean).slice(0, 4);
+    const routeTags = refs.length
+      ? `<div class="tr-route-row">${refs.map(r =>
+          `<span class="tr-route-tag" style="color:${tc};background:${tc}1C;border-color:${tc}44">${r}</span>`
+        ).join('')}</div>`
+      : '';
+
+    return `
+      <div class="tr-card" data-idx="${i}" data-type="${a.type}" style="--tc:${tc}">
+        <div class="tr-card-icon" style="color:${tc};background:${tc}1A">${emoji}</div>
+        <div class="tr-card-info">
+          <div class="tr-card-name">${_escDNA(a.name || a.type)}</div>
+          <div class="tr-card-meta"><span style="color:${tc};font-weight:600">${dist}</span> <span class="tr-card-walk">${walk}</span></div>
+          ${routeTags}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="tr-panel">
+      <div class="tr-cards" id="tr-cards">${cards}</div>
+      <div class="tr-radar-wrap">
+        <canvas class="tr-radar-canvas" width="160" height="160"></canvas>
+      </div>
+    </div>`;
+}
+
+// ── Draw transport radar on canvas ─────────────────────────────────────────────
+
+function _drawTransportRadar(canvas, items, selectedIdx = null) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const maxR = Math.min(W, H) / 2 - 22;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background circle
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR + 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#0A1628';
+  ctx.fill();
+
+  // Concentric rings
+  const RING_RADII = [0.25, 0.5, 0.75, 1.0];
+  const RING_LABELS = ['500m', '1km', '1.5km', '2km'];
+  RING_RADII.forEach((rf, ri) => {
+    const r = rf * maxR;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 0.8;
+    ctx.setLineDash([3, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    if (ri === RING_RADII.length - 1) {
+      ctx.fillStyle = 'rgba(255,255,255,0.22)';
+      ctx.font = '8px -apple-system, sans-serif';
+      ctx.fillText(RING_LABELS[ri], cx + r * Math.cos(Math.PI / 8) + 2, cy + r * Math.sin(Math.PI / 8));
+    }
+  });
+
+  // Group items by type
+  const groups = {};
+  items.forEach(a => {
+    if (!groups[a.type]) groups[a.type] = [];
+    groups[a.type].push(a);
+  });
+  const subtypes = Object.keys(groups);
+  if (!subtypes.length) return;
+
+  const step = (2 * Math.PI) / subtypes.length;
+  const MAX_DIST = 2000;
+
+  subtypes.forEach((type, i) => {
+    const angle = -Math.PI / 2 + i * step;
+    const tc = _TR_COLORS[type] || '#3B82F6';
+    const isSelected = selectedIdx === i;
+
+    // Spoke
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + maxR * Math.cos(angle), cy + maxR * Math.sin(angle));
+    ctx.strokeStyle = isSelected ? tc + 'CC' : tc + '30';
+    ctx.lineWidth = isSelected ? 2.0 : 1.0;
+    ctx.stroke();
+
+    // Amenity dots along spoke
+    groups[type].slice(0, 5).forEach(a => {
+      const d = Math.min(a.distance_meters || MAX_DIST, MAX_DIST);
+      const r = (d / MAX_DIST) * maxR;
+      const px = cx + r * Math.cos(angle);
+      const py = cy + r * Math.sin(angle);
+      ctx.beginPath();
+      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.fillStyle = tc + '22';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = tc;
+      ctx.fill();
+    });
+
+    // Node at spoke end
+    const nx = cx + maxR * Math.cos(angle);
+    const ny = cy + maxR * Math.sin(angle);
+    const nr = isSelected ? 13 : 11;
+
+    if (isSelected) {
+      ctx.beginPath();
+      ctx.arc(nx, ny, nr + 8, 0, Math.PI * 2);
+      ctx.fillStyle = tc + '30';
+      ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+    ctx.fillStyle = tc + (isSelected ? '55' : '28');
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(nx, ny, nr, 0, Math.PI * 2);
+    ctx.strokeStyle = tc + (isSelected ? 'EE' : '80');
+    ctx.lineWidth = isSelected ? 2 : 1.5;
+    ctx.stroke();
+
+    // Emoji inside node
+    const emoji = _TR_EMOJI[type] || '🚌';
+    ctx.font = `${isSelected ? 10 : 9}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, nx, ny);
+  });
+
+  // Home dot at centre
+  ctx.beginPath();
+  ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fill();
+  ctx.font = '9px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏠', cx, cy);
+}
+
+// ── Bind transport card ↔ radar interaction ────────────────────────────────────
+
+function _bindTransportCards(container, items, canvas) {
+  const groups = {};
+  items.forEach(a => {
+    if (!groups[a.type]) groups[a.type] = [];
+    groups[a.type].push(a);
+  });
+  const subtypes = Object.keys(groups);
+  let selectedIdx = null;
+
+  function refresh() {
+    _drawTransportRadar(canvas, items, selectedIdx);
+    container.querySelectorAll('.tr-card').forEach(card => {
+      const typeIdx = subtypes.indexOf(card.dataset.type);
+      const sel = selectedIdx === typeIdx;
+      card.classList.toggle('tr-card--selected', sel);
+    });
+  }
+
+  // Card tap → select type spoke on radar
+  container.querySelectorAll('.tr-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const typeIdx = subtypes.indexOf(card.dataset.type);
+      selectedIdx = selectedIdx === typeIdx ? null : typeIdx;
+      refresh();
+    });
+  });
+
+  // Radar tap → find nearest spoke node → highlight card
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top) * scaleY;
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    const maxR = Math.min(canvas.width, canvas.height) / 2 - 22;
+    const step = (2 * Math.PI) / subtypes.length;
+
+    let nearest = null, nearestDist = Infinity;
+    subtypes.forEach((_, i) => {
+      const angle = -Math.PI / 2 + i * step;
+      const nx = cx + maxR * Math.cos(angle);
+      const ny = cy + maxR * Math.sin(angle);
+      const d = Math.hypot(px - nx, py - ny);
+      if (d < nearestDist) { nearestDist = d; nearest = i; }
+    });
+
+    if (nearest !== null && nearestDist < 30) {
+      selectedIdx = selectedIdx === nearest ? null : nearest;
+      refresh();
+      // Scroll to first card of this type
+      const type = subtypes[nearest];
+      const card = container.querySelector(`.tr-card[data-type="${type}"]`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
 }
 
 // Inline color lookup to avoid circular import in template literal

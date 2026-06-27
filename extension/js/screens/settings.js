@@ -77,6 +77,20 @@ export async function renderSettings(container) {
           </div>
         </div>
 
+        <!-- Help -->
+        <div class="settings-divider"></div>
+        <div class="settings-group">
+          <label class="settings-label">Help</label>
+          <div class="help-row">
+            <button id="btn-guides" class="btn-ghost help-btn">
+              <span>📚</span> Guides &amp; Help
+            </button>
+            <button id="btn-tutorial" class="btn-ghost help-btn">
+              <span>▶</span> Quick Tour
+            </button>
+          </div>
+        </div>
+
         <div id="settings-msg" class="settings-msg hidden"></div>
       </div>
     </div>
@@ -113,6 +127,9 @@ export async function renderSettings(container) {
       showMsg(container, '✓ History cleared.', 'success');
     }
   });
+
+  container.querySelector('#btn-guides')?.addEventListener('click', () => setState({ screen: 'docs' }));
+  container.querySelector('#btn-tutorial')?.addEventListener('click', () => setState({ screen: 'tutorial' }));
 }
 
 function showMsg(container, text, type) {

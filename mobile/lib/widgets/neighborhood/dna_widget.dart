@@ -84,21 +84,21 @@ class _DNAWidgetState extends State<DNAWidget> with SingleTickerProviderStateMix
                   'Area DNA',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 38,
+                    fontSize: 22,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: -1.0,
+                    letterSpacing: -0.5,
                     height: 1.05,
                   ),
                 ).animate(delay: 60.ms).fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 // Subtitle
                 Text(
-                  'Your area\'s unique visual fingerprint —\nshaped by what makes it different.',
+                  'Visual fingerprint of what makes this area unique.',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.72),
-                    fontSize: 18,
+                    color: Colors.white.withOpacity(0.60),
+                    fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    height: 1.6,
+                    height: 1.4,
                   ),
                 ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
                 if (_locationMeta(widget.address) != null) ...[
@@ -116,7 +116,7 @@ class _DNAWidgetState extends State<DNAWidget> with SingleTickerProviderStateMix
               ],
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 16),
 
           // DNA Canvas
           LayoutBuilder(builder: (context, constraints) {

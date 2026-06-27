@@ -28,7 +28,6 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
   late final Animation<double> _anim;
   AmenityCategory? _filter;
   AmenityModel? _tapped;
-  final _paintKey = GlobalKey();
 
   static const _catColors = {
     AmenityCategory.transportation: Color(0xFF29B6F6),
@@ -106,27 +105,27 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
                 'Life Radius',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 38,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: -1.0,
+                  letterSpacing: -0.5,
                   height: 1.05,
                 ),
               ).animate(delay: 60.ms).fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               Text(
-                'Everything within reach —\nmapped around your address.',
+                'Everything within reach, mapped around your address.',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.72),
-                  fontSize: 18,
+                  color: Colors.white.withOpacity(0.60),
+                  fontSize: 13,
                   fontWeight: FontWeight.w400,
-                  height: 1.6,
+                  height: 1.4,
                 ),
               ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
             ],
           ),
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
         // Filter chips
         SizedBox(
@@ -159,23 +158,27 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AnimatedBuilder(
-              animation: _anim,
-              builder: (_, __) => GestureDetector(
-                onTapUp: (d) => _onTap(d.localPosition),
-                child: CustomPaint(
-                  key: _paintKey,
-                  painter: _RadialPainter(
-                    amenities: _visible,
-                    addressLat: widget.addressLat,
-                    addressLng: widget.addressLng,
-                    catColors: _catColors,
-                    animValue: _anim.value,
-                    tapped: _tapped,
+            child: LayoutBuilder(
+              builder: (_, constraints) {
+                final paintSize = constraints.biggest;
+                return AnimatedBuilder(
+                  animation: _anim,
+                  builder: (_, __) => GestureDetector(
+                    onTapUp: (d) => _onTap(d.localPosition, paintSize),
+                    child: CustomPaint(
+                      painter: _RadialPainter(
+                        amenities: _visible,
+                        addressLat: widget.addressLat,
+                        addressLng: widget.addressLng,
+                        catColors: _catColors,
+                        animValue: _anim.value,
+                        tapped: _tapped,
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
                   ),
-                  child: const SizedBox.expand(),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),
@@ -200,12 +203,7 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
     );
   }
 
-  void _onTap(Offset pos) {
-    // Use the CustomPaint's own render box so pos and center share the same
-    // coordinate space. Using the parent build context gave the wrong size.
-    final box = _paintKey.currentContext?.findRenderObject() as RenderBox?;
-    if (box == null) return;
-    final size = box.size;
+  void _onTap(Offset pos, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final maxR = (min(size.width, size.height) / 2) * 0.82;
     const maxDist = 2000.0;

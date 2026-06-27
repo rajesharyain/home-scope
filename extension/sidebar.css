@@ -106,5 +106,13 @@ html, body {
   min-height: 0;
 }
 
+/* ── Explorer / Docs / Tutorial screens ──────────────────────────────────── */
+.explorer-screen,
+.docs-screen,
+.tutorial-screen {
+  height: 100%;
+  min-height: 0;
+}
+
 /* ── Life Radius canvas fills the sidebar width ───────────────────────────── */
 .lr-canvas-wrap { width: 100%; }

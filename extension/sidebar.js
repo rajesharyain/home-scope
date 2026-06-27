@@ -8,6 +8,9 @@ import { renderHome } from './js/screens/home.js';
 import { renderNeighborhood } from './js/screens/neighborhood.js';
 import { renderHistory } from './js/screens/history.js';
 import { renderSettings } from './js/screens/settings.js';
+import { renderExplorer } from './js/screens/explorer.js';
+import { renderDocs } from './js/screens/docs.js';
+import { renderTutorial } from './js/screens/tutorial.js';
 import { uuid } from './js/utils.js';
 
 // ── DOM ────────────────────────────────────────────────────────────────────────
@@ -17,6 +20,9 @@ const screens = {
   results:  document.getElementById('screen-results'),
   history:  document.getElementById('screen-history'),
   settings: document.getElementById('screen-settings'),
+  explorer: document.getElementById('screen-explorer'),
+  docs:     document.getElementById('screen-docs'),
+  tutorial: document.getElementById('screen-tutorial'),
 };
 
 const loadingMsg      = document.getElementById('loading-message');
@@ -44,6 +50,15 @@ function showScreen(name) {
       break;
     case 'settings':
       renderSettings(screens.settings);
+      break;
+    case 'explorer':
+      renderExplorer(screens.explorer);
+      break;
+    case 'docs':
+      renderDocs(screens.docs);
+      break;
+    case 'tutorial':
+      renderTutorial(screens.tutorial);
       break;
   }
 }
