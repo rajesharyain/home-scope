@@ -706,123 +706,13 @@ class _CategoryDetailSheetState extends State<CategoryDetailSheet> {
 
   Widget _buildTransportDNA() {
     if (widget.amenities.isEmpty) return const SizedBox.shrink();
-
-    // Collect unique line numbers from route_ref tags across all stops
-    final allRoutes = <String>{};
-    for (final a in widget.amenities) {
-      final ref = a.tags?['route_ref']?.toString() ?? '';
-      if (ref.isEmpty) continue;
-      for (final r in ref.split(RegExp(r'[;,/\s]+'))) {
-        final t = r.trim();
-        if (t.isNotEmpty) allRoutes.add(t);
-      }
-    }
-    final routes = allRoutes.toList()..sort();
-
     return _Section(
       title: 'TRANSIT RADAR',
-      child: SizedBox(
-        height: 220,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Left column: line numbers ──────────────────────────────
-            SizedBox(
-              width: 116,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _kSurface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _kBorder),
-                ),
-                padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'LINES',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.28),
-                        fontSize: 9,
-                        letterSpacing: 1.6,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (routes.isEmpty)
-                      Expanded(
-                        child: Center(
-                          child: Text(
-                            'No route\ndata',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.18), fontSize: 11),
-                          ),
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: routes.map((r) => Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 7, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _color.withOpacity(0.14),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                    color: _color.withOpacity(0.32)),
-                              ),
-                              child: Text(
-                                r,
-                                style: TextStyle(
-                                  color: _color,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            )).toList(),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
-            // ── Right column: radial radar ──────────────────────────────
-            Expanded(
-              child: LayoutBuilder(
-                builder: (ctx, constraints) {
-                  final sz = min(constraints.maxWidth, constraints.maxHeight);
-                  return Center(
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: 1.0),
-                      duration: const Duration(milliseconds: 1400),
-                      curve: Curves.easeOutCubic,
-                      builder: (_, progress, __) => SizedBox(
-                        width: sz,
-                        height: sz,
-                        child: CustomPaint(
-                          painter: _TransportRadarPainter(
-                            amenities: widget.amenities,
-                            homeLat: widget.address?.lat,
-                            homeLng: widget.address?.lng,
-                            animProgress: progress,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+      child: _TransitRadarSection(
+        amenities: widget.amenities,
+        address: widget.address,
+        color: _color,
+        subtypes: _subtypes,
       ),
     ).animate(delay: 80.ms).fadeIn(duration: 300.ms);
   }
@@ -1755,151 +1645,375 @@ class _RingPainter extends CustomPainter {
   bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
 
-// ── Transit radial radar painter (matches Life Radius style) ─────────────────
+// ── Transit Radar section (two-column: stop info + DNA spoke radar) ──────────
 
-class _TransportRadarPainter extends CustomPainter {
+class _TransitRadarSection extends StatefulWidget {
   final List<AmenityModel> amenities;
-  final double? homeLat;
-  final double? homeLng;
-  final double animProgress;
+  final AddressModel? address;
+  final Color color;
+  final List<_SubType> subtypes;
 
-  static const _maxMeters = 1500.0;
-  static const _rings    = [400.0, 800.0, 1200.0];
-  static const _ringLabels = ['5 min', '10 min', '15 min'];
-
-  _TransportRadarPainter({
+  const _TransitRadarSection({
     required this.amenities,
-    this.homeLat,
-    this.homeLng,
-    this.animProgress = 1.0,
+    required this.address,
+    required this.color,
+    required this.subtypes,
+  });
+
+  @override
+  State<_TransitRadarSection> createState() => _TransitRadarSectionState();
+}
+
+class _TransitRadarSectionState extends State<_TransitRadarSection> {
+  CarrisStop? _carrisStop;
+  List<CarrisArrival> _arrivals = [];
+  Map<String, CarrisLine> _lineColors = {};
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (widget.amenities.isEmpty) return;
+    final nearest = widget.amenities.first;
+    final stop = await CarrisService.nearestStop(nearest.lat, nearest.lng);
+    if (!mounted) return;
+
+    List<CarrisArrival> arrivals = [];
+    Map<String, CarrisLine> colors = {};
+
+    if (stop != null) {
+      arrivals = await CarrisService.realtimeArrivals(stop.id);
+      final ids = {...stop.lines, ...arrivals.map((a) => a.lineId)}.toList();
+      colors = await CarrisService.lineInfoMap(ids);
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _carrisStop = stop;
+      _arrivals = arrivals;
+      _lineColors = colors;
+      _loaded = true;
+    });
+  }
+
+  List<String> get _routes {
+    if (_carrisStop != null && _carrisStop!.lines.isNotEmpty) {
+      return _carrisStop!.lines;
+    }
+    final nearest = widget.amenities.isNotEmpty ? widget.amenities.first : null;
+    if (nearest == null) return [];
+    final ref = nearest.tags?['route_ref']?.toString() ?? '';
+    return ref.isEmpty
+        ? []
+        : ref
+            .split(RegExp(r'[;,/\s]+'))
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nearest = widget.amenities.isNotEmpty ? widget.amenities.first : null;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 5, child: _leftPanel(nearest)),
+        const SizedBox(width: 12),
+        Expanded(flex: 4, child: _rightRadar()),
+      ],
+    );
+  }
+
+  Widget _leftPanel(AmenityModel? a) {
+    if (a == null) return const SizedBox.shrink();
+    final color = widget.color;
+    final stColor = _kTransportColors[a.type] ?? color;
+    final icon = _subTypeIcon[a.type] ?? Icons.train_rounded;
+    final routes = _routes;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _kSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: stColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, color: stColor, size: 15),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _carrisStop?.name ?? a.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          height: 1.2),
+                    ),
+                    if (_carrisStop != null)
+                      Text(
+                        'Stop ${_carrisStop!.id}',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.28), fontSize: 9.5),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.near_me_rounded, size: 11,
+                  color: Colors.white.withOpacity(0.35)),
+              const SizedBox(width: 4),
+              Text(
+                _dist(a.distanceMeters),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.55),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
+              ),
+              if (a.walkingMinutes != null)
+                Text(
+                  '  ·  ${a.walkingMinutes} min',
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.28), fontSize: 10),
+                ),
+            ],
+          ),
+          if (routes.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: routes.take(8).map((id) {
+                final line = _lineColors[id];
+                final bg = line != null ? Color(line.colorInt) : stColor.withOpacity(0.85);
+                final fg = line != null ? Color(line.textColorInt) : Colors.white;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                  decoration: BoxDecoration(
+                      color: bg, borderRadius: BorderRadius.circular(4)),
+                  child: Text(
+                    line?.shortName ?? id,
+                    style: TextStyle(
+                        color: fg, fontSize: 9.5, fontWeight: FontWeight.w800),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+          if (_loaded && _arrivals.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text('NEXT',
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.28),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2)),
+            const SizedBox(height: 4),
+            ..._arrivals.take(3).map((arr) {
+              final mins = arr.minutesUntil;
+              final line = _lineColors[arr.lineId];
+              final dot = line != null ? Color(line.colorInt) : stColor;
+              final timeLabel = mins == null
+                  ? '?'
+                  : mins == 0 ? 'Now' : '${mins}m';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 3),
+                child: Row(children: [
+                  Container(
+                      width: 6, height: 6,
+                      decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: Text(
+                      arr.headsign,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.55), fontSize: 10),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(timeLabel,
+                      style: TextStyle(
+                          color: dot, fontSize: 10.5, fontWeight: FontWeight.w700)),
+                ]),
+              );
+            }),
+          ] else if (!_loaded) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 2,
+              child: LinearProgressIndicator(
+                backgroundColor: _kBorder,
+                valueColor: AlwaysStoppedAnimation(color.withOpacity(0.4)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _rightRadar() {
+    if (widget.subtypes.isEmpty) return const SizedBox.shrink();
+    return AspectRatio(
+      aspectRatio: 1,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 1200),
+        curve: Curves.elasticOut,
+        builder: (_, v, __) => CustomPaint(
+          painter: _TransportDNARadarPainter(
+            subtypes: widget.subtypes,
+            animValue: v,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Transport DNA spoke radar painter ─────────────────────────────────────────
+
+class _TransportDNARadarPainter extends CustomPainter {
+  final List<_SubType> subtypes;
+  final double animValue;
+
+  const _TransportDNARadarPainter({
+    required this.subtypes,
+    required this.animValue,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final center = Offset(cx, cy);
-    final maxR = min(cx, cy) - 16;
-
-    final tp = TextPainter(textDirection: TextDirection.ltr);
+    final c = Offset(size.width / 2, size.height / 2);
+    final maxR = size.width / 2 * 0.76;
+    final visible = subtypes.take(8).toList();
+    final n = visible.length;
 
     // Background disc
-    canvas.drawCircle(center, maxR + 4,
+    canvas.drawCircle(c, size.width / 2 * 0.94,
         Paint()..color = const Color(0xFF0A1628));
 
-    // Concentric rings + walk-time labels
-    for (int i = 0; i < _rings.length; i++) {
-      final r = (_rings[i] / _maxMeters) * maxR;
-      final progress = (animProgress * _maxMeters / _rings[i]).clamp(0.0, 1.0);
-      if (progress <= 0) continue;
-      canvas.drawCircle(
-        center, r * progress,
+    // Reference rings
+    final gridPaint = Paint()
+      ..color = Colors.white.withOpacity(0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    for (final pct in [0.33, 0.66, 1.0]) {
+      canvas.drawCircle(c, maxR * pct, gridPaint);
+    }
+
+    _drawHomeIcon(canvas, c, animValue);
+
+    if (animValue <= 0.01 || n == 0) return;
+
+    final maxScore = visible.map((s) => s.score).reduce(max);
+
+    for (int i = 0; i < n; i++) {
+      final angle = (2 * pi / n) * i - pi / 2;
+      final st = visible[i];
+      final normalized = maxScore > 0 ? st.score / maxScore : 0.0;
+      final r = maxR * normalized * animValue;
+
+      final tip = Offset(c.dx + r * cos(angle), c.dy + r * sin(angle));
+      final color = _kTransportColors[st.type] ?? const Color(0xFF3B82F6);
+
+      // Spoke
+      canvas.drawLine(
+        c, tip,
         Paint()
-          ..color = Colors.white.withOpacity(
-              i == _rings.length - 1 ? 0.11 : 0.06)
+          ..color = color.withOpacity(0.22 * animValue)
+          ..strokeWidth = 1.2
+          ..strokeCap = StrokeCap.round,
+      );
+
+      // Node glow
+      canvas.drawCircle(tip, 13,
+          Paint()..color = color.withOpacity(0.12 * animValue));
+
+      // Node fill
+      canvas.drawCircle(tip, 9,
+          Paint()..color = color.withOpacity(0.85 * animValue));
+      canvas.drawCircle(tip, 9,
+          Paint()
+            ..color = Colors.white.withOpacity(0.12)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.0);
+
+      // Emoji on node
+      final emoji = _subTypeEmoji[st.type] ?? '🚌';
+      final ep = TextPainter(textDirection: TextDirection.ltr)
+        ..text = TextSpan(text: emoji, style: const TextStyle(fontSize: 9))
+        ..layout();
+      ep.paint(canvas, Offset(tip.dx - ep.width / 2, tip.dy - ep.height / 2));
+
+      // Count label beyond node
+      if (animValue > 0.65) {
+        final alpha = ((animValue - 0.65) / 0.35).clamp(0.0, 1.0);
+        final lp = TextPainter(textDirection: TextDirection.ltr)
+          ..text = TextSpan(
+            text: '×${st.count}',
+            style: TextStyle(
+                color: color.withOpacity(0.65 * alpha),
+                fontSize: 9,
+                fontWeight: FontWeight.w700),
+          )
+          ..layout();
+        final labelR = r + 16;
+        lp.paint(canvas,
+            Offset(c.dx + labelR * cos(angle) - lp.width / 2,
+                c.dy + labelR * sin(angle) - lp.height / 2));
+      }
+    }
+  }
+
+  void _drawHomeIcon(Canvas canvas, Offset c, double alpha) {
+    canvas.drawCircle(c, 18,
+        Paint()..color = const Color(0xFF6C63FF).withOpacity(0.18 * alpha));
+    canvas.drawCircle(c, 18,
+        Paint()
+          ..color = const Color(0xFF6C63FF).withOpacity(alpha)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = i == _rings.length - 1 ? 1.2 : 0.8,
-      );
-      if (progress > 0.75) {
-        final alpha = ((progress - 0.75) / 0.25).clamp(0.0, 1.0);
-        tp.text = TextSpan(
-          text: _ringLabels[i],
-          style: TextStyle(
-              color: Colors.white.withOpacity(0.20 * alpha), fontSize: 7.5),
-        );
-        tp.layout();
-        tp.paint(canvas, Offset(cx + 3, cy - r - tp.height - 1));
-      }
-    }
+          ..strokeWidth = 1.5);
+    canvas.drawCircle(c, 10,
+        Paint()..color = const Color(0xFF6C63FF).withOpacity(alpha));
 
-    // Outer boundary
-    canvas.drawCircle(
-      center, maxR,
-      Paint()
-        ..color = Colors.white.withOpacity(0.05 * animProgress)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.0,
-    );
-
-    // Compass rose (N/E/S/W) — faint
-    for (final (label, dx, dy) in [
-      ('N', 0.0, -1.0), ('S', 0.0, 1.0),
-      ('E', 1.0, 0.0),  ('W', -1.0, 0.0),
-    ]) {
-      tp.text = TextSpan(
-        text: label,
-        style: TextStyle(
-            color: Colors.white.withOpacity(0.12 * animProgress),
-            fontSize: 8, fontWeight: FontWeight.w700),
-      );
-      tp.layout();
-      tp.paint(canvas, Offset(
-        cx + (maxR + 6) * dx - tp.width / 2,
-        cy + (maxR + 6) * dy - tp.height / 2,
-      ));
-    }
-
-    // Transport dots — placed at actual geographic bearing + distance
-    final visible = amenities
-        .where((a) => (a.distanceMeters ?? 99999) <= _maxMeters * 1.15)
-        .toList();
-
-    for (final a in visible) {
-      final dist = a.distanceMeters?.toDouble() ?? 0;
-      if (dist <= 0) continue;
-      final r = (dist.clamp(0.0, _maxMeters) / _maxMeters) * maxR;
-
-      Offset pos;
-      if (homeLat != null && homeLng != null &&
-          (a.lat != 0 || a.lng != 0)) {
-        final dLat = a.lat - homeLat!;
-        final dLng =
-            (a.lng - homeLng!) * cos(homeLat! * pi / 180);
-        final angle = atan2(dLng, dLat);
-        // Animate: dots spring out from center
-        final animR = r * animProgress * animProgress;
-        pos = Offset(
-            cx + animR * sin(angle), cy - animR * cos(angle));
-      } else {
-        final idx = visible.indexOf(a);
-        final angle = (2 * pi / visible.length) * idx;
-        final animR = r * animProgress;
-        pos = Offset(cx + animR * cos(angle), cy + animR * sin(angle));
-      }
-
-      final color = _kTransportColors[a.type] ?? const Color(0xFF3B82F6);
-      // Glow
-      canvas.drawCircle(pos, 8,
-          Paint()..color = color.withOpacity(0.15));
-      // Dot
-      canvas.drawCircle(pos, 4.5, Paint()..color = color);
-      // White core
-      canvas.drawCircle(pos, 1.8,
-          Paint()..color = Colors.white.withOpacity(0.88));
-    }
-
-    // Home pin at centre (drawn last so always on top)
-    canvas.drawCircle(
-      center, 16,
-      Paint()
-        ..color = const Color(0xFF6C63FF).withOpacity(0.22 * animProgress),
-    );
-    canvas.drawCircle(
-      center, 16,
-      Paint()
-        ..color = const Color(0xFF6C63FF).withOpacity(animProgress)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.0,
-    );
-    canvas.drawCircle(center, 7,
-        Paint()..color = const Color(0xFF6C63FF));
-    canvas.drawCircle(center, 3.5,
-        Paint()..color = Colors.white);
+    final tp = TextPainter(textDirection: TextDirection.ltr)
+      ..text = const TextSpan(text: '🏠', style: TextStyle(fontSize: 11))
+      ..layout();
+    tp.paint(canvas, Offset(c.dx - tp.width / 2, c.dy - tp.height / 2));
   }
 
   @override
-  bool shouldRepaint(_TransportRadarPainter old) =>
-      old.animProgress != animProgress;
+  bool shouldRepaint(_TransportDNARadarPainter old) =>
+      old.animValue != animValue;
 }
 
 // ── Utilities ──────────────────────────────────────────────────────────────────
