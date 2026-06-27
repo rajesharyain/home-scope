@@ -7,6 +7,7 @@ import '../../models/user_preferences_model.dart';
 import '../../providers/country_provider.dart';
 import '../../providers/preferences_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../tutorial/tutorial_screen.dart';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const _kBg       = Color(0xFF060B14);
@@ -259,6 +260,58 @@ class SettingsScreen extends ConsumerWidget {
                           .setShowAiSummary(v),
                     ),
                   ],
+                ),
+              ),
+            ),
+
+            // ── Help ─────────────────────────────────────────────────────
+            _SectionHeader('HELP'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: _DarkCard(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => TutorialScreen.show(context),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: _kAccent.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.menu_book_rounded,
+                            color: _kAccent, size: 17),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'How to use HomeScope',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'A quick tour of every feature',
+                              style: TextStyle(
+                                color: Colors.white38,
+                                fontSize: 11.5,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded,
+                          color: Colors.white.withOpacity(0.25), size: 20),
+                    ],
+                  ),
                 ),
               ),
             ),

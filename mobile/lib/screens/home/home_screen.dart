@@ -810,7 +810,7 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-// ── What we analyze — 4 + 3 grid ─────────────────────────────────────────────
+// ── What we analyze — pixel-perfect grid ──────────────────────────────────────
 
 class _DimensionRow extends StatelessWidget {
   const _DimensionRow();
@@ -844,20 +844,14 @@ class _DimensionRow extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18),
-          child: LayoutBuilder(
-            builder: (_, constraints) {
-              const cols  = 4;
-              const gap   = 8.0;
-              final cardW = (constraints.maxWidth - gap * (cols - 1)) / cols;
-              return Wrap(
-                spacing: gap,
-                runSpacing: gap,
-                children: _dims.map((d) => SizedBox(
-                  width: cardW,
-                  child: _DimCard(d: d),
-                )).toList(),
-              );
-            },
+          child: GridView.count(
+            crossAxisCount: 4,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 0.82,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: _dims.map((d) => _DimCard(d: d)).toList(),
           ),
         ),
       ],
@@ -865,39 +859,71 @@ class _DimensionRow extends StatelessWidget {
   }
 }
 
-class _DimCard extends StatelessWidget {
+class _DimCard extends StatefulWidget {
   final ({String emoji, String label, Color color}) d;
   const _DimCard({required this.d});
 
   @override
+  State<_DimCard> createState() => _DimCardState();
+}
+
+class _DimCardState extends State<_DimCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: d.color.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border(
-          top: BorderSide(color: d.color.withValues(alpha: 0.55), width: 2),
-          left: BorderSide(color: d.color.withValues(alpha: 0.10)),
-          right: BorderSide(color: d.color.withValues(alpha: 0.10)),
-          bottom: BorderSide(color: d.color.withValues(alpha: 0.10)),
+    final c = widget.d.color;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit:  (_) => setState(() => _hovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        clipBehavior: Clip.antiAlias,
+        transform: Matrix4.translationValues(0, _hovered ? -4 : 0, 0),
+        decoration: BoxDecoration(
+          color: c.withValues(alpha: _hovered ? 0.12 : 0.07),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: c.withValues(alpha: _hovered ? 0.28 : 0.14)),
+          boxShadow: _hovered
+              ? [BoxShadow(color: c.withValues(alpha: 0.24), blurRadius: 14, offset: const Offset(0, 6))]
+              : [],
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(d.emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 7),
-          Text(
-            d.label,
-            style: TextStyle(
-              color: d.color.withValues(alpha: 0.90),
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.1,
+        child: Stack(
+          children: [
+            // Content: icon top, label bottom
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 16, 4, 10),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(widget.d.emoji,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 24)),
+                    Text(
+                      widget.d.label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: c.withValues(alpha: 0.90),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.1,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ],
+            // Top accent bar — identical 3 px on every card
+            Positioned(
+              top: 0, left: 0, right: 0,
+              child: Container(height: 3, color: c.withValues(alpha: 0.70)),
+            ),
+          ],
+        ),
       ),
     );
   }
