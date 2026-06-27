@@ -80,127 +80,283 @@ class _LifeRadiusWidgetState extends State<LifeRadiusWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(height: widget.topPadding + 32),
+    // Places for the active category, sorted by distance
+    final categoryList = _filter == null
+        ? <AmenityModel>[]
+        : (widget.amenities
+            .where((a) => a.category == _filter && a.distanceMeters != null)
+            .toList()
+          ..sort((a, b) =>
+              (a.distanceMeters ?? 99999).compareTo(b.distanceMeters ?? 99999)));
 
-        // Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'PROXIMITY',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 2.2,
-                  height: 1,
-                ),
-              ).animate().fadeIn(duration: 400.ms),
-              const SizedBox(height: 10),
-              const Text(
-                'Life Radius',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                  height: 1.05,
-                ),
-              ).animate(delay: 60.ms).fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
-              const SizedBox(height: 8),
-              Text(
-                'Everything within reach, mapped around your address.',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.60),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  height: 1.4,
-                ),
-              ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
-            ],
-          ),
-        ),
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(height: widget.topPadding + 32),
 
-        const SizedBox(height: 10),
-
-        // Filter chips
-        SizedBox(
-          height: 36,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _FilterChip(
-                label: 'All',
-                icon: Icons.apps_rounded,
-                color: const Color(0xFF6C63FF),
-                selected: _filter == null,
-                onTap: () => setState(() { _filter = null; _tapped = null; }),
-              ),
-              ...AmenityCategory.values.map((cat) => _FilterChip(
-                label: _catLabels[cat] ?? cat.name,
-                icon: _catIcons[cat] ?? Icons.place_rounded,
-                color: _catColors[cat] ?? Colors.grey,
-                selected: _filter == cat,
-                onTap: () => setState(() { _filter = cat; _tapped = null; }),
-              )),
-            ],
-          ),
-        ).animate(delay: 150.ms).fadeIn(),
-
-        const SizedBox(height: 12),
-
-        // Radial map
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LayoutBuilder(
-              builder: (_, constraints) {
-                final paintSize = constraints.biggest;
-                return AnimatedBuilder(
-                  animation: _anim,
-                  builder: (_, __) => GestureDetector(
-                    onTapUp: (d) => _onTap(d.localPosition, paintSize),
-                    child: CustomPaint(
-                      painter: _RadialPainter(
-                        amenities: _visible,
-                        addressLat: widget.addressLat,
-                        addressLng: widget.addressLng,
-                        catColors: _catColors,
-                        animValue: _anim.value,
-                        tapped: _tapped,
-                      ),
-                      child: const SizedBox.expand(),
-                    ),
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'PROXIMITY',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 2.2,
+                    height: 1,
                   ),
-                );
-              },
+                ).animate().fadeIn(duration: 400.ms),
+                const SizedBox(height: 10),
+                const Text(
+                  'Life Radius',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                    height: 1.05,
+                  ),
+                ).animate(delay: 60.ms).fadeIn(duration: 500.ms).slideY(begin: 0.15, end: 0),
+                const SizedBox(height: 8),
+                Text(
+                  'Everything within reach, mapped around your address.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.60),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
+                    height: 1.4,
+                  ),
+                ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
+              ],
             ),
           ),
-        ),
 
-        // Tapped amenity info
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          child: _tapped != null
-              ? _AmenityInfo(amenity: _tapped!, color: _catColors[_tapped!.category] ?? Colors.grey)
-              : Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    '${_visible.length} places in view  •  Tap a dot to explore',
-                    style: const TextStyle(color: Colors.white30, fontSize: 12),
-                    textAlign: TextAlign.center,
-                  ),
+          const SizedBox(height: 10),
+
+          // Filter chips
+          SizedBox(
+            height: 36,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _FilterChip(
+                  label: 'All',
+                  icon: Icons.apps_rounded,
+                  color: const Color(0xFF6C63FF),
+                  selected: _filter == null,
+                  onTap: () => setState(() { _filter = null; _tapped = null; }),
                 ),
-        ),
+                ...AmenityCategory.values.map((cat) => _FilterChip(
+                  label: _catLabels[cat] ?? cat.name,
+                  icon: _catIcons[cat] ?? Icons.place_rounded,
+                  color: _catColors[cat] ?? Colors.grey,
+                  selected: _filter == cat,
+                  onTap: () => setState(() { _filter = cat; _tapped = null; }),
+                )),
+              ],
+            ),
+          ).animate(delay: 150.ms).fadeIn(),
 
-        const SizedBox(height: 8),
-      ],
+          const SizedBox(height: 12),
+
+          // Radial map — fixed height so the list can scroll below it
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: SizedBox(
+              height: 320,
+              child: LayoutBuilder(
+                builder: (_, constraints) {
+                  final paintSize = constraints.biggest;
+                  return AnimatedBuilder(
+                    animation: _anim,
+                    builder: (_, __) => GestureDetector(
+                      onTapUp: (d) => _onTap(d.localPosition, paintSize),
+                      child: CustomPaint(
+                        painter: _RadialPainter(
+                          amenities: _visible,
+                          addressLat: widget.addressLat,
+                          addressLng: widget.addressLng,
+                          catColors: _catColors,
+                          animValue: _anim.value,
+                          tapped: _tapped,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Tapped-dot info bar
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _tapped != null
+                ? _AmenityInfo(
+                    amenity: _tapped!,
+                    color: _catColors[_tapped!.category] ?? Colors.grey)
+                : Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      '${_visible.length} places in view  •  Tap a dot to explore',
+                      style: const TextStyle(color: Colors.white30, fontSize: 12),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+          ),
+
+          // ── Category place list ──────────────────────────────────────────
+          if (categoryList.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    (_catLabels[_filter!] ?? _filter!.name).toUpperCase(),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.32),
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.8,
+                    ),
+                  ),
+                  Text(
+                    '${categoryList.length} places',
+                    style: TextStyle(
+                      color: (_catColors[_filter!] ?? Colors.grey).withOpacity(0.70),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0D1625),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF1A2845)),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  children: List.generate(categoryList.length, (i) {
+                    final a = categoryList[i];
+                    final color = _catColors[a.category] ?? Colors.grey;
+                    final icon = _catIcons[a.category] ?? Icons.place_rounded;
+                    final isTapped = _tapped == a;
+                    return Column(
+                      children: [
+                        if (i > 0)
+                          Divider(
+                            height: 1,
+                            thickness: 0.5,
+                            color: Colors.white.withOpacity(0.05),
+                          ),
+                        InkWell(
+                          onTap: () => setState(() =>
+                              _tapped = isTapped ? null : a),
+                          splashColor: color.withOpacity(0.08),
+                          highlightColor: color.withOpacity(0.05),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            color: isTapped
+                                ? color.withOpacity(0.06)
+                                : Colors.transparent,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 11),
+                            child: Row(children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: color.withOpacity(isTapped ? 0.20 : 0.10),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(icon, color: color, size: 15),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      a.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: isTapped
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.88),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Text(
+                                      a.type.replaceAll('_', ' '),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.35),
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    _formatDist(a.distanceMeters),
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.55),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  if (a.walkingMinutes != null)
+                                    Text(
+                                      '${a.walkingMinutes} min',
+                                      style: TextStyle(
+                                        color: color.withOpacity(0.75),
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ).animate().fadeIn(duration: 280.ms).slideY(begin: 0.06, end: 0),
+            ),
+          ],
+
+          const SizedBox(height: 32),
+        ],
+      ),
     );
+  }
+
+  static String _formatDist(int? m) {
+    if (m == null) return '';
+    return m < 1000 ? '${m}m' : '${(m / 1000).toStringAsFixed(1)}km';
   }
 
   void _onTap(Offset pos, Size size) {
