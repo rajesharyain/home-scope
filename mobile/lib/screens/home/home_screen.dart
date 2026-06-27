@@ -810,19 +810,19 @@ class _HistoryTile extends StatelessWidget {
   }
 }
 
-// ── What we analyze ───────────────────────────────────────────────────────────
+// ── What we analyze — 4 + 3 grid ─────────────────────────────────────────────
 
 class _DimensionRow extends StatelessWidget {
   const _DimensionRow();
 
   static const _dims = [
-    (emoji: '🚇', label: 'Transport'),
-    (emoji: '🎓', label: 'Education'),
-    (emoji: '🏥', label: 'Health'),
-    (emoji: '🛡', label: 'Safety'),
-    (emoji: '🛍', label: 'Lifestyle'),
-    (emoji: '🌳', label: 'Nature'),
-    (emoji: '💼', label: 'Investment'),
+    (emoji: '🚇', label: 'Transport',  color: Color(0xFF29B6F6)),
+    (emoji: '🎓', label: 'Education',  color: Color(0xFF66BB6A)),
+    (emoji: '🏥', label: 'Health',     color: Color(0xFFEF5350)),
+    (emoji: '🛡', label: 'Safety',     color: Color(0xFFAB47BC)),
+    (emoji: '🛍', label: 'Lifestyle',  color: Color(0xFFFFA726)),
+    (emoji: '🌳', label: 'Nature',     color: Color(0xFF26C6DA)),
+    (emoji: '💼', label: 'Investment', color: Color(0xFF8D6E63)),
   ];
 
   @override
@@ -831,57 +831,74 @@ class _DimensionRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(22, 0, 22, 11),
+          padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
           child: Text(
             'WHAT WE ANALYZE',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.26),
+              color: Colors.white.withValues(alpha: 0.26),
               fontSize: 10.5,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.6,
             ),
           ),
         ),
-        SizedBox(
-          height: 34,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 22),
-            itemCount: _dims.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 7),
-            itemBuilder: (_, i) {
-              final d = _dims[i];
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 11, vertical: 0),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.04),
-                  borderRadius: BorderRadius.circular(8),
-                  border:
-                      Border.all(color: Colors.white.withOpacity(0.07)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(d.emoji,
-                        style: const TextStyle(fontSize: 13)),
-                    const SizedBox(width: 6),
-                    Text(
-                      d.label,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.48),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: -0.1,
-                      ),
-                    ),
-                  ],
-                ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          child: LayoutBuilder(
+            builder: (_, constraints) {
+              const cols  = 4;
+              const gap   = 8.0;
+              final cardW = (constraints.maxWidth - gap * (cols - 1)) / cols;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: _dims.map((d) => SizedBox(
+                  width: cardW,
+                  child: _DimCard(d: d),
+                )).toList(),
               );
             },
           ),
         ),
       ],
+    );
+  }
+}
+
+class _DimCard extends StatelessWidget {
+  final ({String emoji, String label, Color color}) d;
+  const _DimCard({required this.d});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: d.color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border(
+          top: BorderSide(color: d.color.withValues(alpha: 0.55), width: 2),
+          left: BorderSide(color: d.color.withValues(alpha: 0.10)),
+          right: BorderSide(color: d.color.withValues(alpha: 0.10)),
+          bottom: BorderSide(color: d.color.withValues(alpha: 0.10)),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(d.emoji, style: const TextStyle(fontSize: 22)),
+          const SizedBox(height: 7),
+          Text(
+            d.label,
+            style: TextStyle(
+              color: d.color.withValues(alpha: 0.90),
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
