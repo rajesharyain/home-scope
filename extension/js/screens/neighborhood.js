@@ -32,11 +32,11 @@ export function renderNeighborhood(container, result) {
       </div>
 
       <!-- Tab content -->
-      <div id="ni-content" class="ni-content"></div>
+      <div class="ni-content ni-tab-content"></div>
     </div>
   `;
 
-  const content = container.querySelector('#ni-content');
+  const content = container.querySelector('.ni-tab-content');
   const tabs = container.querySelectorAll('.ni-tab');
 
   function activateTab(tabId) {

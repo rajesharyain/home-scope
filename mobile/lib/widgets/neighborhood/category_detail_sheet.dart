@@ -2185,15 +2185,17 @@ class _TransportDNARadarPainter extends CustomPainter {
       final tip = Offset(c.dx + r * cos(angle), c.dy + r * sin(angle));
       final color = _kTransportColors[st.type] ?? const Color(0xFF3B82F6);
 
+      final a01 = animValue.clamp(0.0, 1.0);
+
       canvas.drawLine(c, tip,
           Paint()
-            ..color = color.withOpacity(0.38 * animValue)
+            ..color = color.withOpacity(0.38 * a01)
             ..strokeWidth = 1.5
             ..strokeCap = StrokeCap.round);
 
-      canvas.drawCircle(tip, 20, Paint()..color = color.withOpacity(0.07 * animValue));
-      canvas.drawCircle(tip, 14, Paint()..color = color.withOpacity(0.14 * animValue));
-      canvas.drawCircle(tip, 11, Paint()..color = color.withOpacity(0.90 * animValue));
+      canvas.drawCircle(tip, 20, Paint()..color = color.withOpacity(0.07 * a01));
+      canvas.drawCircle(tip, 14, Paint()..color = color.withOpacity(0.14 * a01));
+      canvas.drawCircle(tip, 11, Paint()..color = color.withOpacity(0.90 * a01));
       canvas.drawCircle(tip, 11,
           Paint()
             ..color = Colors.white.withOpacity(0.16)

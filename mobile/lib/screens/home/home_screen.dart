@@ -527,11 +527,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: Column(
                     children: history.take(6).map((entry) => _HistoryTile(
                           entry: entry,
-                          onTap: () {
-                            _addressController.text =
-                                entry.address.displayAddress;
-                            setState(() {});
+                          onTap: () async {
                             _focusNode.unfocus();
+                            await ref.read(analysisProvider.notifier).loadFromHistory(entry);
+                            if (mounted) ref.read(shellTabProvider.notifier).state = 1;
                           },
                           onRemove: () => ref
                               .read(searchHistoryProvider.notifier)

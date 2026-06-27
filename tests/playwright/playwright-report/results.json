@@ -1,0 +1,890 @@
+{
+  "config": {
+    "argv": [
+      "/opt/homebrew/Cellar/node@22/22.23.1/bin/node",
+      "/Users/ravi/Documents/Apps/home-scope/tests/playwright/node_modules/.bin/playwright",
+      "test",
+      "--config=playwright.config.js",
+      "specs/01-home-screen.spec.js"
+    ],
+    "configFile": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/playwright.config.js",
+    "rootDir": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/specs",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/specs",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "01-home-screen.spec.js",
+      "file": "01-home-screen.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "home screen is active on launch",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 0,
+                  "error": {
+                    "message": "TimeoutError: browserContext.waitForEvent: Timeout 15000ms exceeded while waiting for event \"serviceworker\"",
+                    "stack": "TimeoutError: browserContext.waitForEvent: Timeout 15000ms exceeded while waiting for event \"serviceworker\"\n    at launchExtension (/Users/ravi/Documents/Apps/home-scope/tests/playwright/helpers/launch.js:44:24)\n    at /Users/ravi/Documents/Apps/home-scope/tests/playwright/specs/01-home-screen.spec.js:9:24",
+                    "location": {
+                      "file": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/helpers/launch.js",
+                      "column": 24,
+                      "line": 44
+                    },
+                    "snippet": "\u001b[90m   at \u001b[39m../helpers/launch.js:44\n\n  42 |   }\n  43 |   if (!sw) {\n> 44 |     sw = await context.waitForEvent('serviceworker', { timeout: 15_000 });\n     |                        ^\n  45 |   }\n  46 |   const extensionId = sw.url().split('/')[2];\n  47 |"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/helpers/launch.js",
+                        "column": 24,
+                        "line": 44
+                      },
+                      "message": "TimeoutError: browserContext.waitForEvent: Timeout 15000ms exceeded while waiting for event \"serviceworker\"\n\n   at ../helpers/launch.js:44\n\n  42 |   }\n  43 |   if (!sw) {\n> 44 |     sw = await context.waitForEvent('serviceworker', { timeout: 15_000 });\n     |                        ^\n  45 |   }\n  46 |   const extensionId = sw.url().split('/')[2];\n  47 |\n    at launchExtension (/Users/ravi/Documents/Apps/home-scope/tests/playwright/helpers/launch.js:44:24)\n    at /Users/ravi/Documents/Apps/home-scope/tests/playwright/specs/01-home-screen.spec.js:9:24"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/specs/01-home-screen.spec.js",
+                        "column": 17,
+                        "line": 13
+                      },
+                      "message": "TypeError: Cannot read properties of undefined (reading 'close')\n\n  11 |\n  12 | test.afterAll(async () => {\n> 13 |   await context.close();\n     |                 ^\n  14 | });\n  15 |\n  16 | test.beforeEach(async () => {\n    at /Users/ravi/Documents/Apps/home-scope/tests/playwright/specs/01-home-screen.spec.js:13:17"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:25:49.491Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/test-results/01-home-screen-home-screen-is-active-on-launch/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/test-results/01-home-screen-home-screen-is-active-on-launch/error-context.md"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/test-results/01-home-screen-home-screen-is-active-on-launch/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/ravi/Documents/Apps/home-scope/tests/playwright/helpers/launch.js",
+                    "column": 24,
+                    "line": 44
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-ea088525bc4c6d8d7ffe",
+          "file": "01-home-screen.spec.js",
+          "line": 22,
+          "column": 1
+        },
+        {
+          "title": "HomeScope logo is visible",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.764Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-1a900161678f143aced6",
+          "file": "01-home-screen.spec.js",
+          "line": 27,
+          "column": 1
+        },
+        {
+          "title": "headline text renders",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-b54307bc94c25b8041ff",
+          "file": "01-home-screen.spec.js",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "address input is present and focusable",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-eeb9b8e900b4e59eb5cd",
+          "file": "01-home-screen.spec.js",
+          "line": 37,
+          "column": 1
+        },
+        {
+          "title": "country selector defaults to PT",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-9ca9eaa14542be31e7c5",
+          "file": "01-home-screen.spec.js",
+          "line": 44,
+          "column": 1
+        },
+        {
+          "title": "all profile chips are rendered",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-9ca37b38cf1596cbec45",
+          "file": "01-home-screen.spec.js",
+          "line": 49,
+          "column": 1
+        },
+        {
+          "title": "\"Default\" profile chip is active on load",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-f6f74375c50099d7d4e6",
+          "file": "01-home-screen.spec.js",
+          "line": 54,
+          "column": 1
+        },
+        {
+          "title": "profile chip selection switches active state",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-0144afbc396ed9e3f09a",
+          "file": "01-home-screen.spec.js",
+          "line": 59,
+          "column": 1
+        },
+        {
+          "title": "analyze button is visible",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-83257765221fc7a9cf54",
+          "file": "01-home-screen.spec.js",
+          "line": 65,
+          "column": 1
+        },
+        {
+          "title": "submitting empty address shows validation error",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-f590cd19d92d562d76d8",
+          "file": "01-home-screen.spec.js",
+          "line": 69,
+          "column": 1
+        },
+        {
+          "title": "typing in address input clears validation error",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-488dfc969b8bd7a537f8",
+          "file": "01-home-screen.spec.js",
+          "line": 76,
+          "column": 1
+        },
+        {
+          "title": "Enter key in address input triggers analyze",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-63085a63700b02b67f73",
+          "file": "01-home-screen.spec.js",
+          "line": 83,
+          "column": 1
+        },
+        {
+          "title": "FAQ accordion opens on click",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-1f03466092db8de752c0",
+          "file": "01-home-screen.spec.js",
+          "line": 95,
+          "column": 1
+        },
+        {
+          "title": "FAQ accordion closes when same item clicked again",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-24316d89c886ba2bc808",
+          "file": "01-home-screen.spec.js",
+          "line": 102,
+          "column": 1
+        },
+        {
+          "title": "FAQ only one item open at a time",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-e39dedeb6d468882816d",
+          "file": "01-home-screen.spec.js",
+          "line": 111,
+          "column": 1
+        },
+        {
+          "title": "history nav icon navigates to history screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-377fa5749faf52ab341d",
+          "file": "01-home-screen.spec.js",
+          "line": 125,
+          "column": 1
+        },
+        {
+          "title": "settings nav icon navigates to settings screen",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-eaf0d50bcf6caf83449b",
+          "file": "01-home-screen.spec.js",
+          "line": 130,
+          "column": 1
+        },
+        {
+          "title": "history preview is hidden when no history",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-68627bf7e66235158ac9",
+          "file": "01-home-screen.spec.js",
+          "line": 138,
+          "column": 1
+        },
+        {
+          "title": "history preview shows when history exists in storage",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-7e7f4b314f37ef5badf9",
+          "file": "01-home-screen.spec.js",
+          "line": 142,
+          "column": 1
+        },
+        {
+          "title": "history preview shows up to 5 tiles",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-f16e08de96f23e5a5222",
+          "file": "01-home-screen.spec.js",
+          "line": 147,
+          "column": 1
+        },
+        {
+          "title": "history tile shows address text",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-029ab231175c4bd13b0f",
+          "file": "01-home-screen.spec.js",
+          "line": 153,
+          "column": 1
+        },
+        {
+          "title": "history tile shows score",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": -1,
+                  "parallelIndex": -1,
+                  "status": "skipped",
+                  "duration": 0,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-06-27T22:26:10.765Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "skipped"
+            }
+          ],
+          "id": "67e8f0523b456efe9229-ab944251560f056987ac",
+          "file": "01-home-screen.spec.js",
+          "line": 159,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-06-27T22:25:49.163Z",
+    "duration": 47489.424,
+    "expected": 0,
+    "skipped": 21,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
