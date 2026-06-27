@@ -100,9 +100,9 @@ function renderDNA(content, result) {
         <canvas id="radar-canvas" width="280" height="280"></canvas>
       </div>
 
-      <div class="dna-legend">
+      <div class="dna-legend" id="dna-legend">
         ${Object.values(cats).map(cat => `
-          <div class="dna-legend-row">
+          <div class="dna-legend-row" data-cat-id="${cat.id}" style="cursor:pointer;--cat-color:${getCatColor(cat.id)}">
             <div class="dna-legend-dot" style="background:${getCatColor(cat.id)}"></div>
             <span class="dna-legend-label">${cat.label}</span>
             <div class="dna-legend-bar-bg">
@@ -110,6 +110,10 @@ function renderDNA(content, result) {
                 style="width:${cat.score}%;background:${getCatColor(cat.id)}"></div>
             </div>
             <span class="dna-legend-score" style="color:${getCatColor(cat.id)}">${Math.round(cat.score)}</span>
+            <span class="dna-legend-chevron">›</span>
+          </div>
+          <div class="dna-cat-detail" id="dna-detail-${cat.id}" style="display:none">
+            ${_buildCatDetail(cat, getCatColor(cat.id))}
           </div>
         `).join('')}
       </div>
@@ -121,6 +125,64 @@ function renderDNA(content, result) {
     const canvas = content.querySelector('#radar-canvas');
     if (canvas) renderRadarChart(canvas, cats);
   });
+
+  // Legend row toggle
+  let openCatId = null;
+  content.querySelector('#dna-legend').addEventListener('click', e => {
+    const row = e.target.closest('.dna-legend-row[data-cat-id]');
+    if (!row) return;
+    const catId = row.dataset.catId;
+    const detail = content.querySelector(`#dna-detail-${catId}`);
+    if (!detail) return;
+    const isOpen = openCatId === catId;
+    // Close any open detail
+    if (openCatId) {
+      const prev = content.querySelector(`#dna-detail-${openCatId}`);
+      if (prev) prev.style.display = 'none';
+      content.querySelectorAll('.dna-legend-row').forEach(r => r.classList.remove('active'));
+    }
+    if (!isOpen) {
+      detail.style.display = 'block';
+      row.classList.add('active');
+      openCatId = catId;
+    } else {
+      openCatId = null;
+    }
+  });
+}
+
+function _buildCatDetail(cat, color) {
+  const closest = cat.closest;
+  const score = Math.round(cat.score);
+  const scoreLabel_ = score >= 80 ? 'Excellent' : score >= 60 ? 'Good' : score >= 40 ? 'Fair' : 'Poor';
+
+  return `
+    <div class="dna-detail-card" style="--cat-color:${color}">
+      <div class="dna-detail-row">
+        <div class="dna-detail-stat">
+          <div class="dna-detail-num" style="color:${color}">${score}</div>
+          <div class="dna-detail-sub">${scoreLabel_} score</div>
+        </div>
+        <div class="dna-detail-stat">
+          <div class="dna-detail-num">${cat.count ?? '—'}</div>
+          <div class="dna-detail-sub">places nearby</div>
+        </div>
+        ${closest ? `
+        <div class="dna-detail-stat">
+          <div class="dna-detail-num" style="color:${color}">
+            ${closest.walking_minutes != null ? closest.walking_minutes + 'm' : Math.round((closest.distance_meters || 0)) + 'm'}
+          </div>
+          <div class="dna-detail-sub">closest</div>
+        </div>` : ''}
+      </div>
+      ${closest ? `
+      <div class="dna-detail-closest">
+        <span class="dna-detail-closest-label">Nearest:</span>
+        <span class="dna-detail-closest-name">${closest.name || closest.type || '—'}</span>
+        ${closest.distance_meters ? `<span class="dna-detail-closest-dist" style="color:${color}">${closest.distance_meters < 1000 ? Math.round(closest.distance_meters) + 'm' : (closest.distance_meters / 1000).toFixed(1) + 'km'}</span>` : ''}
+      </div>` : ''}
+    </div>
+  `;
 }
 
 // Inline color lookup to avoid circular import in template literal

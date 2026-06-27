@@ -105,6 +105,9 @@ export function renderLifeRadius(container, result) {
         <span class="lr-info-hint" id="lr-info-text">${allAmenities.length} places · Tap a dot to explore</span>
       </div>
 
+      <!-- Category place list (shown when a filter is active) -->
+      <div id="lr-cat-list"></div>
+
       <!-- Phase 7: Empty state (hidden by default) -->
       <div id="lr-empty" class="lr-empty-state" style="display:none">
         <div class="lr-empty-icon">🔍</div>
@@ -178,6 +181,71 @@ export function renderLifeRadius(container, result) {
   const scoreEl = container.querySelector('#lr-score-num');
   if (scoreEl) _countUp(scoreEl, overall);
 
+  const catListEl = container.querySelector('#lr-cat-list');
+
+  function updateCategoryList() {
+    if (!activeFilter) {
+      catListEl.innerHTML = '';
+      return;
+    }
+    const places = allAmenities
+      .filter(a => a.category === activeFilter)
+      .sort((a, b) => a.distance_meters - b.distance_meters);
+    if (!places.length) { catListEl.innerHTML = ''; return; }
+
+    const color = CAT_COLORS[activeFilter] || '#888';
+    const label = CAT_LABELS[activeFilter] || activeFilter;
+
+    catListEl.innerHTML = `
+      <div class="lr-catlist-header">
+        <span class="lr-catlist-title">${label.toUpperCase()}</span>
+        <span class="lr-catlist-count" style="color:${color}">${places.length} places</span>
+      </div>
+      <div class="lr-catlist-card">
+        ${places.map((a, i) => `
+          <div class="lr-catlist-row ${tapped === a ? 'active' : ''}"
+               data-idx="${i}"
+               style="--row-color:${color}">
+            <div class="lr-catlist-icon" style="background:${color}1a;color:${color}">
+              ${categoryEmoji(activeFilter)}
+            </div>
+            <div class="lr-catlist-body">
+              <div class="lr-catlist-name">${a.name || a.type}</div>
+              <div class="lr-catlist-type">${(a.type || '').replace(/_/g, ' ')}</div>
+            </div>
+            <div class="lr-catlist-meta">
+              <span class="lr-catlist-dist">${formatDistance(a.distance_meters)}</span>
+              ${a.walking_minutes != null
+                ? `<span class="lr-catlist-walk" style="color:${color}">${a.walking_minutes} min</span>`
+                : ''}
+            </div>
+          </div>
+          ${i < places.length - 1 ? '<div class="lr-catlist-divider"></div>' : ''}
+        `).join('')}
+      </div>
+    `;
+
+    // Row click → highlight dot on radar
+    catListEl.querySelectorAll('.lr-catlist-row').forEach((row, i) => {
+      row.addEventListener('click', () => {
+        tapped = (tapped === places[i]) ? null : places[i];
+        redraw(1);
+        updateCategoryList();
+        if (tapped) {
+          const c = categoryColor(tapped.category);
+          infoTxt.className = 'lr-info-detail';
+          infoTxt.innerHTML = `
+            <span class="lr-info-dot" style="background:${c}"></span>
+            <span class="lr-info-name">${tapped.name || tapped.type}</span>
+            <span class="lr-info-walk" style="color:${c}">${formatDistance(tapped.distance_meters)} · ${formatWalkTime(tapped.walking_minutes)}</span>
+          `;
+        } else {
+          _setHint(infoTxt, `${places.length} places · Tap a dot to explore`);
+        }
+      });
+    });
+  }
+
   // ── Filter chips ──────────────────────────────────────────────────────────
   container.querySelector('#lr-filter-row').addEventListener('click', e => {
     const chip = e.target.closest('.lr-chip');
@@ -191,6 +259,7 @@ export function renderLifeRadius(container, result) {
       : allAmenities.length;
     _setHint(infoTxt, `${n} places · Tap a dot to explore`);
     redraw(1);
+    updateCategoryList();
   });
 
   // ── Canvas tap ────────────────────────────────────────────────────────────
@@ -207,6 +276,7 @@ export function renderLifeRadius(container, result) {
 
     tapped = (tapped === nearest) ? null : nearest;
     redraw(1);
+    updateCategoryList();
 
     if (tapped) {
       const c = categoryColor(tapped.category);

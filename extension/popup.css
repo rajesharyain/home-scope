@@ -876,8 +876,17 @@ html, body {
 }
 #radar-canvas { display: block; }
 
-.dna-legend { display: flex; flex-direction: column; gap: 8px; }
-.dna-legend-row { display: flex; align-items: center; gap: 8px; }
+.dna-legend { display: flex; flex-direction: column; gap: 4px; }
+.dna-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+.dna-legend-row:hover { background: rgba(255,255,255,0.04); }
+.dna-legend-row.active { background: color-mix(in srgb, var(--cat-color) 8%, transparent); }
 .dna-legend-dot {
   width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
 }
@@ -891,6 +900,51 @@ html, body {
 }
 .dna-legend-bar { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 .dna-legend-score { font-size: 12px; font-weight: 600; min-width: 28px; text-align: right; }
+.dna-legend-chevron {
+  font-size: 14px;
+  color: rgba(255,255,255,0.2);
+  transition: transform 0.2s, color 0.2s;
+}
+.dna-legend-row.active .dna-legend-chevron {
+  transform: rotate(90deg);
+  color: var(--cat-color);
+}
+
+/* DNA category detail card */
+.dna-cat-detail { padding: 0 8px 8px; }
+.dna-detail-card {
+  background: color-mix(in srgb, var(--cat-color) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cat-color) 20%, var(--border));
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.dna-detail-row {
+  display: flex;
+  gap: 0;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+.dna-detail-stat { text-align: center; }
+.dna-detail-num { font-size: 18px; font-weight: 700; line-height: 1.2; }
+.dna-detail-sub { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+.dna-detail-closest {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-size: 11.5px;
+  min-width: 0;
+}
+.dna-detail-closest-label { color: rgba(255,255,255,0.3); flex-shrink: 0; }
+.dna-detail-closest-name {
+  flex: 1;
+  color: rgba(255,255,255,0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dna-detail-closest-dist { font-weight: 600; flex-shrink: 0; }
 
 /* ── Time Machine ─────────────────────────────────────────────────────────── */
 .tm-sky {
@@ -1963,3 +2017,90 @@ html, body {
   font-size: 12.5px;
 }
 .empty-sub { font-size: 13px; color: var(--text3); text-align: center; }
+
+/* ── Life Radius – Category place list ────────────────────────────────────── */
+.lr-catlist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px 6px;
+}
+.lr-catlist-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: rgba(255,255,255,0.32);
+}
+.lr-catlist-count {
+  font-size: 11px;
+  font-weight: 600;
+}
+.lr-catlist-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin: 0 16px 12px;
+  overflow: hidden;
+}
+.lr-catlist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lr-catlist-row.active {
+  background: color-mix(in srgb, var(--row-color) 8%, transparent);
+}
+.lr-catlist-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+.lr-catlist-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.lr-catlist-body {
+  flex: 1;
+  min-width: 0;
+}
+.lr-catlist-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lr-catlist-type {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.35);
+  text-transform: capitalize;
+}
+.lr-catlist-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.lr-catlist-dist {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+}
+.lr-catlist-walk {
+  font-size: 11px;
+  font-weight: 600;
+}
+.lr-catlist-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.05);
+  margin: 0 14px;
+}
